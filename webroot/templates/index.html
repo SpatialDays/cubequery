@@ -1,0 +1,58 @@
+<html lang="en">
+<head>
+    <title>Cube Query</title>
+    <link rel="stylesheet" href="/static/main.css">
+    <script>
+
+        function appendKey(url) {
+            let key = document.getElementById("app_key").value;
+            if (url.includes("?")) {
+                return url + "&APP_KEY=" + key
+            } else {
+                return url + "?APP_KEY=" + key
+            }
+        }
+
+        function submitRequest() {
+            let id = document.getElementById("task_id").value;
+            let request = new XMLHttpRequest();
+            let url = "/task/";
+            if (id !== "") {
+                url = url + id
+            }
+            request.open("GET", appendKey(url));
+            request.onload = function() {
+                alert(this.response)
+            };
+
+            request.send();
+        }
+
+        function loadTaskInfo() {
+            let request = new XMLHttpRequest();
+            let url = "/describe";
+            request.open("GET", appendKey(url));
+            request.onload = function() {
+                // TODO: build the form here.
+                alert(this.response)
+            };
+
+            request.send();
+        }
+
+    </script>
+</head>
+<body>
+    <h1>Test Task Submission Form</h1>
+    <label for="app_key">App key:</label><input id="app_key" type="text" value="fishfishfish">
+    <hr>
+    <h2>Lookup tasks</h2>
+    <label for="task_id">Task ID (leave blank for all tasks):</label><input id="task_id" type="text" value="">
+    <button title="Lookup" onclick="submitRequest()">Lookup</button>
+    <div id="task_look_results"></div>
+    <hr>
+    <h2>Task Submission</h2>
+    <button title="LoadTasks" onclick="loadTaskInfo()">Load Task Information</button>
+
+</body>
+</html>

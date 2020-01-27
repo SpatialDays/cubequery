@@ -1,0 +1,10 @@
+venv/
+venv_make/
+venv_windows/
+.eggs/
+.idea/
+__pycache__/
+*.egg-info/
+dist/
+build/
+nose2-junit.xml

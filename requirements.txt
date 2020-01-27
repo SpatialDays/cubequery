@@ -1,0 +1,5 @@
+celery[redis]
+jobtastic
+flask
+redis
+python-logstash
