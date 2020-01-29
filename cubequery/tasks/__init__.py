@@ -1,4 +1,5 @@
 import json
+import math
 from enum import EnumMeta
 
 from jobtastic import JobtasticTask
@@ -13,13 +14,6 @@ class DType(EnumMeta):
     DATE = "date"
     TIME = "time"
     WKT = "wkt"
-
-
-class DTypeEncoder(json.JSONEncoder):
-    def default(self, o):
-        if type(o) in DType.values():
-            return {"__enum__": str(o)}
-        return json.JSONEncoder.default(self, o)
 
 
 class Parameter(object):
@@ -49,11 +43,68 @@ class CubeQueryTask(JobtasticTask):
 
     def validate_arg(self, name, value):
         # TODO: Make this return a message to be more useful
-        if name not in [p.name for p in self.parameters]:
+        search = [p for p in self.parameters if p.name == name]
+        if len(search) == 0:
             return False
+
+        param = search[0]
         # TODO: validate data type of value
+        if not validate_dtype(param, value):
+            return False
         # TODO: check ranges
         return True
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
+
+
+def validate_dtype(param, value):
+    if param.d_type == DType.INT:
+        if isinstance(value, int):
+            return True
+        if isinstance(value, str):
+            return check_int(value)
+        return False
+    if param.d_type == DType.FLOAT:
+        if isinstance(value, float):
+            return True
+        if isinstance(value, str):
+            return check_float(value)
+        return False
+    if param.d_type == DType.LAT:
+        ok = False
+        if isinstance(value, float):
+            ok = True
+        if isinstance(value, str):
+            ok = check_float(value)
+
+        if ok:
+            v = float(value)
+            return -90.0 <= v <= 90.0
+    if param.d_type == DType.LON:
+        ok = False
+        if isinstance(value, float):
+            ok = True
+        if isinstance(value, str):
+            ok = check_float(value)
+
+        if ok:
+            v = float(value)
+            return -180.0 <= v <= 180.0
+        return False
+
+    return isinstance(value, str)
+
+
+def check_int(s):
+    if s[0] in ('-', '+'):
+        return s[1:].isdigit()
+    return s.isdigit()
+
+
+def check_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False

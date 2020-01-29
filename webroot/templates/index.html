@@ -22,7 +22,7 @@
             }
             request.open("GET", appendKey(url));
             request.onload = function () {
-                alert(this.response)
+                console.log(this.response)
             };
 
             request.send();

@@ -29,7 +29,7 @@ setup(
     keywords='open data cube query engine',
     name='cubequery',
     license='apache2',
-    packages=find_packages(include=['cubequery']),
+    packages=find_packages(include=['cubequery'], exclude=['venv*', ]),
     install_requires=requirements,
     setup_requires=[],
     tests_require=requirements_test,
