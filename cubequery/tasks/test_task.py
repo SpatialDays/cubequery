@@ -3,17 +3,20 @@ from itertools import product
 
 
 # This task is a dummy task to make sure things work
-class DoAThing(JobtasticTask):
+from cubequery.tasks import Parameter, CubeQueryTask, DType
 
+
+class DoAThing(CubeQueryTask):
+
+    display_name = "Do A Thing"
     description = "a test task, not really good for anything."
 
-    significant_kwargs = [
-        ('a', str),
-        ('b', str),
+    parameters = [
+        Parameter("a", DType.STRING, "string a"),
+        Parameter("b", DType.STRING, "string b"),
     ]
 
-    herd_avoidance_timeout = 60
-    cache_duration = 0
+    CubeQueryTask.cal_significant_kwargs(parameters)
 
     def calculate_result(self, a, b, **kwargs):
         """

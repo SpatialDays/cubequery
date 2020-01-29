@@ -7,7 +7,8 @@ from celery.states import PENDING
 from flask import Flask, request, abort, render_template, jsonify
 
 from cubequery import validate_app_key, get_config
-from cubequery.packages import task_matcher, find_modules, find_classes, task_info
+from cubequery.packages import find_available_tasks, is_valid_task, load_task_instance
+from cubequery.tasks import test_task, DTypeEncoder
 
 config = {
     "DEBUG": True,  # TODO: change for prod deployments
@@ -34,21 +35,18 @@ def describe():
     if not validate_app_key(request):
         abort(403)
 
-    result = []
-    task_class_list = find_classes(find_modules("cubequery.worker"), "cubequery", task_matcher)
-    for t in task_class_list:
-        result += [task_info(t)]
+    result = find_available_tasks()
 
     return jsonify(result)
 
 
-@app.route('/task/<id>', methods=['GET'])
-def task_id(id):
+@app.route('/task/<task_id>', methods=['GET'])
+def task_id(task_id):
     if not validate_app_key(request):
         abort(403)
 
-    logging.info(f"looking up task by id {id}")
-    entry = AsyncResult(id, app=celery_app)
+    logging.info(f"looking up task by id {task_id}")
+    entry = AsyncResult(task_id, app=celery_app)
 
     # weirdly tasks can expire from the celery queue.
     # Unknown ids return a status of pending but also not ready and not failed. So ...
@@ -76,7 +74,7 @@ def all_tasks():
     result += [i.reserved()]
     logging.info("got reserved")
 
-    # TODO: normalise the details here. No one outside of the cluster cares about which worker things are on
+    # TODO: normalise the details here. No one outside of the cluster cares about which tasks things are on
     # That should not be a top level breakdown.
 
     return jsonify(result)
@@ -87,8 +85,26 @@ def create_task():
     if not validate_app_key(request):
         abort(403)
 
-    logging.info(request.body)
-    pass
+    payload = request.get_json()
+    logging.info(payload)
+    if not is_valid_task(payload['task']):
+        abort(400, "invalid task")
+
+    thing = load_task_instance(payload['task'])
+    thing.app = celery_app
+
+    # work out the args mapping
+    args = {}
+    for (k, v) in payload['args'].items():
+        if thing.validate_arg(k, v):
+            args[k] = v
+        else:
+            logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation")
+            abort(400, f"invalid parameter {k}")
+
+    future = thing.delay_or_fail(**args)
+
+    return future.task_id
 
 
 if __name__ == '__main__':
