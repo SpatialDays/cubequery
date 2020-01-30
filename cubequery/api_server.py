@@ -96,11 +96,12 @@ def create_task():
     # work out the args mapping
     args = {}
     for (k, v) in payload['args'].items():
-        if thing.validate_arg(k, v):
+        valid, msg = thing.validate_arg(k, v)
+        if valid:
             args[k] = v
         else:
-            logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation")
-            abort(400, f"invalid parameter {k}")
+            logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
+            abort(400, f"invalid parameter {k}, {msg}")
 
     future = thing.delay_or_fail(**args)
 

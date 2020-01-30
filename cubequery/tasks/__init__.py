@@ -37,20 +37,19 @@ class CubeQueryTask(JobtasticTask):
         # special handling for dates, lat lon pairs, bounding boxes, etc.
         if d_type == DType.INT:
             return int
+        if d_type in (DType.FLOAT, DType.LAT, DType.LON):
+            return float
         return str
 
     def validate_arg(self, name, value):
-        # TODO: Make this return a message to be more useful
         search = [p for p in self.parameters if p.name == name]
         if len(search) == 0:
-            return False
+            return False, f"parameter {name} not found"
 
         param = search[0]
-        # TODO: validate data type of value
         if not validate_d_type(param, value):
-            return False
-        # TODO: check ranges
-        return True
+            return False, f"parameter {name} value did not validate"
+        return True, ""
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
