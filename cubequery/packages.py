@@ -4,7 +4,7 @@ import logging
 import pkgutil
 
 
-def _find_modules(module_name):
+def find_modules(module_name):
     def _inner_find(_module_name):
         result = []
         for sub_module in pkgutil.walk_packages([_module_name]):
@@ -79,7 +79,7 @@ def find_available_tasks():
 
     :return: a list of available task metadata
     """
-    task_class_list = _find_classes(_find_modules("cubequery.tasks"), "cubequery", _task_matcher)
+    task_class_list = _find_classes(find_modules("cubequery.tasks"), "cubequery", _task_matcher)
     result = []
     for t in task_class_list:
         result += [_task_info(t)]

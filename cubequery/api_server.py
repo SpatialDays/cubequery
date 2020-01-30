@@ -7,8 +7,7 @@ from celery.states import PENDING
 from flask import Flask, request, abort, render_template, jsonify
 
 from cubequery import validate_app_key, get_config
-from cubequery.packages import find_available_tasks, is_valid_task, load_task_instance
-from cubequery.tasks import test_task, DTypeEncoder
+from cubequery.packages import find_available_tasks, is_valid_task, load_task_instance, find_modules
 
 config = {
     "DEBUG": True,  # TODO: change for prod deployments
@@ -23,6 +22,9 @@ app.config.from_mapping(config)
 redis_url = get_config("Redis", "url")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
 celery_app.conf.JOBTASTIC_CACHE = redis_url
+
+packages = [m.replace("/", ".") for m in find_modules("cubequery.tasks")]
+celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
 @app.route('/')
