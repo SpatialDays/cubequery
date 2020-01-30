@@ -10,7 +10,7 @@ from cubequery import validate_app_key, get_config
 from cubequery.packages import find_available_tasks, is_valid_task, load_task_instance, find_modules
 
 config = {
-    "DEBUG": True,  # TODO: change for prod deployments
+    "DEBUG": get_config("App", "debug"),
 }
 
 template_dir = os.path.abspath('./webroot/templates')
@@ -21,6 +21,12 @@ app.config.from_mapping(config)
 
 redis_url = get_config("Redis", "url")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
+celery_app.conf.update(
+    result_expires=60*60*24*10,  # ten days
+    task_publish_retry=False,
+    task_ignore_result=False,
+    task_track_started=True,
+)
 celery_app.conf.JOBTASTIC_CACHE = redis_url
 
 packages = [m.replace("/", ".") for m in find_modules("cubequery.tasks")]
@@ -48,14 +54,9 @@ def task_id(task_id):
         abort(403)
 
     logging.info(f"looking up task by id {task_id}")
-    entry = AsyncResult(task_id, app=celery_app)
+    i = celery_app.control.inspect()
 
-    # weirdly tasks can expire from the celery queue.
-    # Unknown ids return a status of pending but also not ready and not failed. So ...
-    if entry.status == PENDING and not entry.ready() and not entry.failed():
-        return abort(404)
-    # TODO: change this around to have a useful structure.
-    return entry.__dict__
+    return jsonify(normalise_single_task(i.query_task(task_id)))
 
 
 @app.route('/task/', methods=['GET'])
@@ -66,7 +67,7 @@ def all_tasks():
     logging.info("looking up all tasks...")
     # note there must be a worker running or this won't return...
     i = celery_app.control.inspect()
-    logging.info(f"got inspecter {i}")
+    logging.info(f"got inspected {i}")
     result = []
 
     result += [i.scheduled()]
@@ -79,7 +80,7 @@ def all_tasks():
     # TODO: normalise the details here. No one outside of the cluster cares about which tasks things are on
     # That should not be a top level breakdown.
 
-    return jsonify(result)
+    return jsonify(normalise_task_info(result))
 
 
 @app.route('/task', methods=['POST'])
@@ -108,6 +109,43 @@ def create_task():
     future = thing.delay_or_fail(**args)
 
     return future.task_id
+
+
+def normalise_single_task(info):
+    result = []
+    for (server, things) in info.items():
+        for (_, tasks) in things.items():
+            (state, t) = tasks
+
+            result += [{
+                "id": t['id'],
+                "name": t['name'],
+                "time_start": t['time_start'],
+                "args": t['kwargs'],
+                "ack": t['acknowledged'],
+                "server": server,
+                "state": state
+            }]
+
+    return result
+
+
+def normalise_task_info(info):
+    result = []
+
+    for section in info:
+        for (server, tasks) in section.items():
+            for t in tasks:
+                result += [{
+                    "id": t['id'],
+                    "name": t['name'],
+                    "time_start": t['time_start'],
+                    "args": t['kwargs'],
+                    "ack": t['acknowledged'],
+                    "server": server
+                }]
+
+    return result
 
 
 if __name__ == '__main__':
