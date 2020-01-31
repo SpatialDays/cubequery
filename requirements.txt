@@ -1,5 +1,5 @@
 celery[redis]
 jobtastic
 flask
-redis
+redis==3.3.11
 python-logstash
