@@ -2,8 +2,6 @@ import logging
 import os
 
 from celery import Celery
-from celery.result import AsyncResult
-from celery.states import PENDING
 from flask import Flask, request, abort, render_template, jsonify
 
 from cubequery import validate_app_key, get_config
@@ -22,7 +20,7 @@ app.config.from_mapping(config)
 redis_url = get_config("Redis", "url")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
 celery_app.conf.update(
-    result_expires=60*60*24*10,  # ten days
+    result_expires=60 * 60 * 24 * 10,  # ten days
     task_publish_retry=False,
     task_ignore_result=False,
     task_track_started=True,

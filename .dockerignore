@@ -1,0 +1,5 @@
+venv*/
+redisdata/
+tests/
+cubequery.egg-info/
+.tox/
