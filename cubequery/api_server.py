@@ -147,4 +147,4 @@ def normalise_task_info(info):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host=get_config("App", "host"))
