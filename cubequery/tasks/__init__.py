@@ -51,6 +51,22 @@ class CubeQueryTask(JobtasticTask):
             return False, f"parameter {name} value did not validate"
         return True, ""
 
+    def calculate_result(self, **kwargs):
+        """
+        This is the entry point for a task run. Will be called by celery.
+
+        :param kwargs: arguments to the tasks.
+        :return:
+        """
+
+        # connect to the datacube and pass that in to the users function.
+        # Everything should be talking to the datacube here so makes sense to pull it out and make things
+        # easier for the users.
+        dc = None  # TODO: make this do something real.
+        outputs = self.generate_product(dc, **kwargs)
+
+        # TODO: put the results some where, send notifications etc.
+
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
 

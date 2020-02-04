@@ -2,6 +2,9 @@ import importlib
 import inspect
 import logging
 import pkgutil
+import sys
+
+from cubequery import get_config
 
 
 def find_modules(module_name):
@@ -98,6 +101,28 @@ def is_valid_task(name):
             return True
     logging.info(f"Could not find {name} in {possible}")
     return False
+
+
+def prime_extra_dirs():
+    """
+    load up extra directories to the python path.
+    :return: True if anything was added to the python path.
+    """
+    added = False
+    dir_list = get_config("App", "extra_path")
+    if dir_list != "":
+        parts = dir_list.split(';')
+        for p in parts:
+            if p not in sys.path:
+                sys.path.insert(0, p)
+                added = True
+
+    return added
+
+
+# Load up any extra dirs we need from the env. This can happen on start up. Containers should be restarted
+# if the content of these directories change.
+prime_extra_dirs()
 
 
 def load_task_instance(name):

@@ -18,7 +18,7 @@ class DoAThing(CubeQueryTask):
 
     CubeQueryTask.cal_significant_kwargs(parameters)
 
-    def calculate_result(self, a, b, **kwargs):
+    def generate_product(self, a, b, **kwargs):
         """
         Do A Thing
         """
