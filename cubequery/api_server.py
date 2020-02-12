@@ -51,6 +51,19 @@ def index():
 
 @app.route('/describe', methods=['GET'])
 def describe():
+    """
+    Fetch a description of the available tasks to run.
+    Each result will have a name, display name, description and a list of parameters.
+    Each parameter will have a name, description, type and list of valid values.
+    If the list of valid values is empty then anything goes.
+    If the type is "str" (a string) and there is a list of valid values, that is a complete list of acceptable values.
+    If the type is "int", "date" or "float" and there are two entries in the valid values, the first is min, the second
+        max
+    If the type is "int", "date" or "float" and there are more than two entries then it is a complete list of possible
+        values.
+
+    :return: a JSON encodes list of task description objects.
+    """
     if not validate_app_key(request):
         abort(403)
 

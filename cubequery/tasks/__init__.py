@@ -15,10 +15,13 @@ class DType(EnumMeta):
 
 
 class Parameter(object):
-    def __init__(self, name, d_type, description):
+    def __init__(self, name, d_type, description, valid=None):
+        if valid is None:
+            valid = []
         self.name = name
         self.d_type = d_type
         self.description = description
+        self.valid = valid
 
 
 class CubeQueryTask(JobtasticTask):

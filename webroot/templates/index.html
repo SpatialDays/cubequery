@@ -107,13 +107,52 @@
                 label_el.for=id_string;
 
                 instance_div.appendChild(label_el);
+                console.log("creating field " + p.name + " with type " + p.type + " and valid values " + p.valid_values.length);
+                if (p.valid_values &&
+                    ((["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
+                    ((! ["int", "float", "date"].includes(p.type)) && p.valid_values.length > 0))
+                ) {
+                    // should be a select input type.
+                    let select_el = document.createElement("select");
 
-                let input_el = document.createElement("input");
-                input_el.id = id_string;
-                input_el.type = "text"; // TODO: this needs updating for the different input types
+                    instance_div.appendChild(select_el);
 
-                instance_div.appendChild(input_el);
+                    select_el.id = id_string;
+                    for (let j = 0; j < p.valid_values.length; j++){
+                        let el = document.createElement("option");
+                        el.text = p.valid_values[j];
+                        el.value = p.valid_values[j];
+                        el.index = j;
 
+                        select_el.add(el);
+                    }
+
+                } else {
+                    // a text input (unless the type is something we can put a html 5 input for.
+                    let input_el = document.createElement("input");
+                    input_el.id = id_string;
+
+                    if (p.valid_values && (p.valid_values.length === 2 && ["int", "float", "date"].includes(p.type))) {
+                        input_el.min = p.valid_values[0];
+                        input_el.max = p.valid_values[1];
+                    }
+
+                    if (p.type === "int") {
+                         input_el.type = "number";
+                    }
+                    else if (p.type === "float") {
+                         input_el.type = "number";
+                         input_el.step = "0.001";
+                    }
+                    else if (p.type === "date") {
+                        input_el.type = "date";
+                    }
+                    else {
+                         input_el.type = "text";
+                    }
+
+                    instance_div.appendChild(input_el);
+                }
                 let description_el = document.createElement("p");
                 description_el.innerText = p.description;
 
