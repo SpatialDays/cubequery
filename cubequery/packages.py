@@ -1,42 +1,17 @@
 import importlib
 import inspect
 import logging
-import pkgutil
+import os
 import sys
+
+from importlib.util import spec_from_file_location, module_from_spec
 
 from cubequery import get_config
 
-
-def find_modules(module_name):
-    def _inner_find(_module_name):
-        result = []
-        for sub_module in pkgutil.walk_packages([_module_name]):
-            _, sub_module_name, _ = sub_module
-            qname = _module_name + "." + sub_module_name
-            result += [qname]
-            result += _inner_find(qname)
-
-        return result
-
-    return _inner_find(module_name.replace(".", "/"))
-
-
-def _find_classes(module_list, root_module, matcher):
-    result = []
-    for m in module_list:
-        target_module = m.replace("/", ".")
-        mod = __import__(target_module, fromlist=[root_module])
-        for name, obj in inspect.getmembers(mod, inspect.isclass):
-            if matcher(name, obj):
-                result += [obj]
-    return result
+logger = logging.getLogger("packages")
 
 
 def _task_matcher(name, obj):
-    # TODO: make this filter on more things when we know what they are.
-    if not (hasattr(obj, 'name') and obj.name.startswith("cubequery.")):
-        return False
-
     # Need a description to pass to the user
     if not hasattr(obj, 'description'):
         return False
@@ -76,26 +51,13 @@ def _task_info(clazz):
     }
 
 
-def find_available_tasks():
-    """
-    Work out which tasks are available and return the metadata for those tasks.
-
-    :return: a list of available task metadata
-    """
-    task_class_list = _find_classes(find_modules("cubequery.tasks"), "cubequery", _task_matcher)
-    result = []
-    for t in task_class_list:
-        result += [_task_info(t)]
-    return result
-
-
 def is_valid_task(name):
     """
     Is the provided task name one of the tasks that we can find?
     :param name: name of the class to check.
     :return: True if and only if the provided name is one we can find.
     """
-    possible = find_available_tasks()
+    possible = list_processes()
     for p in possible:
         if p['name'] == name:
             return True
@@ -103,26 +65,55 @@ def is_valid_task(name):
     return False
 
 
-def prime_extra_dirs():
-    """
-    load up extra directories to the python path.
-    :return: True if anything was added to the python path.
-    """
+def load_module(root, file, package_root):
+    full_path = os.path.join(root, file)
+    mod_name = (os.path.join(root, file)[len(package_root):-3]).replace(os.sep, '.')
+    spec = spec_from_file_location(mod_name, full_path)
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sys.modules[mod_name] = module
+    logger.debug(f"checking module {mod_name}")
+    result = []
+    for name, obj in inspect.getmembers(module):
+        logger.debug(f"> checking {mod_name}.{name}")
+        if _task_matcher(name, obj):
+            logger.debug(f"MATCHED {mod_name}.{name}")
+            result += [_task_info(obj)]
+    return result
+
+
+_process_cache = None  # TODO: some way of resetting this...
+
+
+def list_processes():
+    global _process_cache
+
+    if _process_cache:
+        return _process_cache
+
     added = False
+    result = []
     dir_list = get_config("App", "extra_path")
     if dir_list != "":
         parts = dir_list.split(';')
         for p in parts:
             if p not in sys.path:
-                sys.path.insert(0, p)
-                added = True
+                logger.info(f"adding {p} to python path")
+                sys.path.append(p)
+            for (root, dirs, files) in os.walk(p, topdown=True):
+                for f in files:
+                    if f.endswith(".py"):
+                        try:
+                            result += load_module(root, f, p)
+                        except Exception as e:
+                            logger.warning(f"could not load {root}/{f} due to {e} skipping")
 
-    return added
+    if added:
+        importlib.invalidate_caches()
 
+    _process_cache = result
 
-# Load up any extra dirs we need from the env. This can happen on start up. Containers should be restarted
-# if the content of these directories change.
-prime_extra_dirs()
+    return result
 
 
 def load_task_instance(name):
@@ -145,4 +136,4 @@ def load_task_instance(name):
 
 
 if __name__ == '__main__':
-    print(find_available_tasks())
+    print(list_processes())

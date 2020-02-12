@@ -36,9 +36,9 @@ class CubeQueryTask(JobtasticTask):
         # TODO: add more data types here.
         # special handling for dates, lat lon pairs, bounding boxes, etc.
         if d_type == DType.INT:
-            return int
+            return str
         if d_type in (DType.FLOAT, DType.LAT, DType.LON):
-            return float
+            return str
         return str
 
     def validate_arg(self, name, value):

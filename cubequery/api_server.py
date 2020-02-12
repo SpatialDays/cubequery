@@ -3,12 +3,22 @@ import os
 
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify
+from flask_caching import Cache
+from jobtastic.cache import WrappedCache
 
 from cubequery import validate_app_key, get_config
-from cubequery.packages import find_available_tasks, is_valid_task, load_task_instance, find_modules
+from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
+
+def _to_bool(input):
+    return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+
+
+redis_url = get_config("Redis", "url")
 config = {
-    "DEBUG": get_config("App", "debug"),
+    "DEBUG": _to_bool(get_config("App", "debug")),
+    "CACHE_TYPE": "redis",
+    "CACHE_REDIS_URL": redis_url,
 }
 
 template_dir = os.path.abspath('./webroot/templates')
@@ -16,18 +26,21 @@ static_dir = os.path.abspath('./webroot/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config.from_mapping(config)
-
-redis_url = get_config("Redis", "url")
+cache = WrappedCache(Cache(app))
+logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
+
+# celery_app.conf.update(app.config)
+
 celery_app.conf.update(
     result_expires=60 * 60 * 24 * 10,  # ten days
-    task_publish_retry=False,
+    task_publish_retry=True,
     task_ignore_result=False,
     task_track_started=True,
+    JOBTASTIC_CACHE=cache,
 )
-celery_app.conf.JOBTASTIC_CACHE = redis_url
 
-packages = [m.replace("/", ".") for m in find_modules("cubequery.tasks")]
+packages = [m['name'].replace("/", ".") for m in list_processes()]
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
@@ -41,7 +54,7 @@ def describe():
     if not validate_app_key(request):
         abort(403)
 
-    result = find_available_tasks()
+    result = list_processes()
 
     return jsonify(result)
 
@@ -85,6 +98,8 @@ def all_tasks():
 def create_task():
     if not validate_app_key(request):
         abort(403)
+
+    global celery_app
 
     payload = request.get_json()
     logging.info(payload)

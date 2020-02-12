@@ -54,6 +54,12 @@ console.setFormatter(
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
 
+logging.getLogger("packages").setLevel(logging.ERROR)
+logging.getLogger("matplotlib").setLevel(logging.INFO)
+logging.getLogger("rasterio").setLevel(logging.INFO)
+logging.getLogger("fiona").setLevel(logging.INFO)
+logging.getLogger("shapely").setLevel(logging.INFO)
+
 logger.addHandler(console)
 
 # For later as we will likely one day want better logging.
