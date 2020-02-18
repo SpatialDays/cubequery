@@ -41,7 +41,13 @@ def _task_info(clazz):
     """
     params = []
     for e in clazz.parameters:
-        params += [{"name": e.name, "type": e.d_type, "description": e.description, "valid_values": e.valid}]
+        params += [{
+            "name": e.name,
+            "display_name": e.display_name,
+            "type": e.d_type,
+            "description": e.description,
+            "valid_values": e.valid
+        }]
 
     return {
         "name": clazz.name,

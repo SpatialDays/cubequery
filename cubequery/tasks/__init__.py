@@ -1,6 +1,10 @@
+import logging
 from enum import EnumMeta
+from os import path
 
+import datacube
 from jobtastic import JobtasticTask
+from shapely import wkt
 
 
 class DType(EnumMeta):
@@ -15,10 +19,11 @@ class DType(EnumMeta):
 
 
 class Parameter(object):
-    def __init__(self, name, d_type, description, valid=None):
+    def __init__(self, name, display_name, d_type, description, valid=None):
         if valid is None:
             valid = []
         self.name = name
+        self.display_name = display_name
         self.d_type = d_type
         self.description = description
         self.valid = valid
@@ -65,9 +70,10 @@ class CubeQueryTask(JobtasticTask):
         # connect to the datacube and pass that in to the users function.
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
-        dc = None  # TODO: make this do something real.
-        outputs = self.generate_product(dc, **kwargs)
-
+        path_prefix = path.join("/tmp", self.request.id)
+        dc = datacube.Datacube(app=self.name)
+        outputs = self.generate_product(dc, path_prefix, **kwargs)
+        logging.info(f"got result of {outputs}")
         # TODO: put the results some where, send notifications etc.
 
     herd_avoidance_timeout = 60
@@ -89,6 +95,13 @@ def validate_d_type(param, value):
             v = float(value)
             return -180.0 <= v <= 180.0
         return False
+    if param.d_type == DType.WKT:
+        # try and parse it and see what happens
+        try:
+            wkt.loads(value)
+            return True
+        except Exception:
+            return False
     # if it is not one of the above types we can just check it is a string for now.
     # TODO: More type validations. WKT, DateFormats etc.
     return isinstance(value, str)

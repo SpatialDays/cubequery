@@ -7,3 +7,4 @@ redis==3.3.11
 python-logstash
 numpy==1.18.1
 datacube==1.7
+shapely==1.6.4

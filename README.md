@@ -13,6 +13,8 @@ Most of the build for this project works through the `Makefile`
 
 Run `make docker` to build the base containers to work on top of.
 
+Your build of the containers will need to provide connection details for the [Open Data Cube](https://www.opendatacube.org/).
+
 ## Architecture
  
  CubeQuery is made up of three components. 

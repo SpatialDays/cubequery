@@ -54,7 +54,7 @@ console.setFormatter(
 logger = logging.getLogger('')
 logger.setLevel(logging.DEBUG)
 
-logging.getLogger("packages").setLevel(logging.ERROR)
+logging.getLogger("packages").setLevel(logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.INFO)
 logging.getLogger("rasterio").setLevel(logging.INFO)
 logging.getLogger("fiona").setLevel(logging.INFO)
