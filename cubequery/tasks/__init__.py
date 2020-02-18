@@ -1,4 +1,5 @@
 import logging
+import os
 from enum import EnumMeta
 from os import path
 
@@ -71,6 +72,9 @@ class CubeQueryTask(JobtasticTask):
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
         path_prefix = path.join("/tmp", self.request.id)
+
+        os.makedirs(path_prefix, exist_ok=True)
+
         dc = datacube.Datacube(app=self.name)
         outputs = self.generate_product(dc, path_prefix, **kwargs)
         logging.info(f"got result of {outputs}")
