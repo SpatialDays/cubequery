@@ -197,7 +197,6 @@
             request.open("POST", appendKey(url));
             request.setRequestHeader("Content-Type", "application/json");
             request.onload = function () {
-                console.log(this.response);
                 if (request.status >= 200 && request.status < 400) {
                     let token_response = JSON.parse(this.response);
                     document.getElementById("app_key").value = token_response.token;
