@@ -4,10 +4,10 @@ import os
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify
 from flask_caching import Cache
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import validate_app_key, get_config, users
+from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
@@ -65,9 +65,7 @@ def describe():
 
     :return: a JSON encodes list of task description objects.
     """
-    valid, user_id = validate_app_key(request)
-    if not valid:
-        abort(403)
+    validate_app_key()
 
     result = list_processes()
 
@@ -76,9 +74,7 @@ def describe():
 
 @app.route('/task/<task_id>', methods=['GET'])
 def task_id(task_id):
-    valid, user_id = validate_app_key(request)
-    if not valid:
-        abort(403)
+    validate_app_key()
 
     logging.info(f"looking up task by id {task_id}")
     i = celery_app.control.inspect()
@@ -88,9 +84,7 @@ def task_id(task_id):
 
 @app.route('/task/', methods=['GET'])
 def all_tasks():
-    valid, user_id = validate_app_key(request)
-    if not valid:
-        abort(403)
+    validate_app_key()
 
     logging.info("looking up all tasks...")
     # note there must be a worker running or this won't return...
@@ -125,15 +119,13 @@ def get_token():
     if not users.check_user(payload['name'], payload['pass'], request.remote_addr):
         abort(403, "bad creds")
 
-    s = Serializer(get_config("App", "secret_key"), expires_in=600)
+    s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
     return jsonify({'token': s.dumps({'id': payload['name']})})
 
 
 @app.route('/task', methods=['POST'])
 def create_task():
-    valid, user_id = validate_app_key(request)
-    if not valid:
-        abort(403)
+    user_id = validate_app_key()
 
     global celery_app
 
@@ -146,7 +138,7 @@ def create_task():
     thing.app = celery_app
 
     # work out the args mapping
-    args = {}
+    args = {'user': user_id}
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
         if valid:
@@ -198,6 +190,25 @@ def normalise_task_info(info):
                     }]
 
     return result
+
+
+def validate_app_key():
+    """
+    Get the app key parameter from a request and check that it is a valid token.
+    :return: Bool, True if and only if the requests app key is a valid token
+    """
+
+    if 'APP_KEY' in request.args:
+        s = Serializer(get_config("App", "secret_key"))
+        try:
+            data = s.loads(request.args['APP_KEY'])
+            # TODO: look up the id and make sure its a real one.
+            return data['id']
+        except SignatureExpired:
+            abort(403, "Token expired")
+        except BadSignature:
+            abort(403, "Invalid token")
+    abort(403, "No token")
 
 
 if __name__ == '__main__':
