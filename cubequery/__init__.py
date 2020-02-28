@@ -2,6 +2,7 @@
 # init the config here so it is available in many places.
 import configparser
 import logging
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, BadSignature, SignatureExpired
 from os import environ
 
 __author__ = """Emily Selwood"""
@@ -33,14 +34,22 @@ def get_config(section, key):
 
 def validate_app_key(request):
     """
-    Get the app key parameter from a request and check that it matches whats in the config as the app key.
+    Get the app key parameter from a request and check that it is a valid token.
     :param request: a flask request object.
-    :return: Bool, True if and only if the requests app key matches the configured app key
+    :return: Bool, True if and only if the requests app key is a valid token
     """
 
-    if 'APP_KEY' in request.args and request.args['APP_KEY'] == get_config("App", "key"):
-        return True
-    return False
+    if 'APP_KEY' in request.args:
+        s = Serializer(get_config("App", "secret_key"))
+        try:
+            data = s.loads(request.args['APP_KEY'])
+            # TODO: look up the id and make sure its a real one.
+            return True, data['id']
+        except SignatureExpired:
+            return False, None  # valid token, but expired
+        except BadSignature:
+            return False, None  # invalid token
+    return False, None
 
 
 # also configure the console logging just in case

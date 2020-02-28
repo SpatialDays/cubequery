@@ -189,20 +189,51 @@
                 ));
         }
 
+        function fetch_token() {
+            let user_name = document.getElementById("username").value;
+            let pass = document.getElementById("pass").value;
+            let request = new XMLHttpRequest();
+            let url = "/token";
+            request.open("POST", appendKey(url));
+            request.setRequestHeader("Content-Type", "application/json");
+            request.onload = function () {
+                console.log(this.response);
+                if (request.status >= 200 && request.status < 400) {
+                    let token_response = JSON.parse(this.response);
+                    document.getElementById("app_key").value = token_response.token;
+                }
+            };
+            request.send(JSON.stringify(
+                {
+                    name: user_name,
+                    pass: pass
+                }
+                ));
+
+            return false;
+        }
 
     </script>
 </head>
 <body>
     <h1>Test Task Submission Form</h1>
+
+    <label for="username">User:</label><input id="username" type="text">
+    <label for="pass">Pass:</label><input id="pass" type="password">
+    <button onclick="fetch_token();">log in</button><br>
+
     <label for="app_key">App key:</label><input id="app_key" type="text" value="fishfishfish">
+
     <hr>
     <h2>Lookup tasks</h2>
     <label for="task_id">Task ID (leave blank for all tasks):</label><input id="task_id" type="text" value="">
     <button title="Lookup" onclick="lookupTask()">Lookup</button>
     <div id="task_look_results"></div>
+
     <hr>
     <h2>Task Submission</h2>
     <button title="LoadTasks" onclick="load_system_description()">Load Task Information</button>
     <div id="task_submission_form"></div>
+
 </body>
 </html>

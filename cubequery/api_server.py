@@ -4,9 +4,10 @@ import os
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify
 from flask_caching import Cache
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from jobtastic.cache import WrappedCache
 
-from cubequery import validate_app_key, get_config
+from cubequery import validate_app_key, get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
@@ -64,7 +65,8 @@ def describe():
 
     :return: a JSON encodes list of task description objects.
     """
-    if not validate_app_key(request):
+    valid, user_id = validate_app_key(request)
+    if not valid:
         abort(403)
 
     result = list_processes()
@@ -74,7 +76,8 @@ def describe():
 
 @app.route('/task/<task_id>', methods=['GET'])
 def task_id(task_id):
-    if not validate_app_key(request):
+    valid, user_id = validate_app_key(request)
+    if not valid:
         abort(403)
 
     logging.info(f"looking up task by id {task_id}")
@@ -85,7 +88,8 @@ def task_id(task_id):
 
 @app.route('/task/', methods=['GET'])
 def all_tasks():
-    if not validate_app_key(request):
+    valid, user_id = validate_app_key(request)
+    if not valid:
         abort(403)
 
     logging.info("looking up all tasks...")
@@ -107,9 +111,28 @@ def all_tasks():
     return jsonify(normalise_task_info(result))
 
 
+@app.route('/token', methods=['POST'])
+def get_token():
+    payload = request.get_json()
+    if not payload['name']:
+        abort(403, "name required")
+
+    if not payload['pass']:
+        abort(403, "pass required")
+
+    logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
+
+    if not users.check_user(payload['name'], payload['pass'], request.remote_addr):
+        abort(403, "bad creds")
+
+    s = Serializer(get_config("App", "secret_key"), expires_in=600)
+    return jsonify({'token': s.dumps({'id': payload['name']})})
+
+
 @app.route('/task', methods=['POST'])
 def create_task():
-    if not validate_app_key(request):
+    valid, user_id = validate_app_key(request)
+    if not valid:
         abort(403)
 
     global celery_app
@@ -139,19 +162,21 @@ def create_task():
 
 def normalise_single_task(info):
     result = []
-    for (server, things) in info.items():
-        for (_, tasks) in things.items():
-            (state, t) = tasks
+    if info:
+        for (server, things) in info.items():
+            if things:
+                for (_, tasks) in things.items():
+                    (state, t) = tasks
 
-            result += [{
-                "id": t['id'],
-                "name": t['name'],
-                "time_start": t['time_start'],
-                "args": t['kwargs'],
-                "ack": t['acknowledged'],
-                "server": server,
-                "state": state
-            }]
+                    result += [{
+                        "id": t['id'],
+                        "name": t['name'],
+                        "time_start": t['time_start'],
+                        "args": t['kwargs'],
+                        "ack": t['acknowledged'],
+                        "server": server,
+                        "state": state
+                    }]
 
     return result
 
@@ -160,16 +185,17 @@ def normalise_task_info(info):
     result = []
 
     for section in info:
-        for (server, tasks) in section.items():
-            for t in tasks:
-                result += [{
-                    "id": t['id'],
-                    "name": t['name'],
-                    "time_start": t['time_start'],
-                    "args": t['kwargs'],
-                    "ack": t['acknowledged'],
-                    "server": server
-                }]
+        if section:
+            for (server, tasks) in section.items():
+                for t in tasks:
+                    result += [{
+                        "id": t['id'],
+                        "name": t['name'],
+                        "time_start": t['time_start'],
+                        "args": t['kwargs'],
+                        "ack": t['acknowledged'],
+                        "server": server
+                    }]
 
     return result
 

@@ -1,11 +1,15 @@
+import json
 import logging
 import os
+import zipfile
 from enum import EnumMeta
 from os import path
 
 import datacube
 from jobtastic import JobtasticTask
 from shapely import wkt
+
+from cubequery import get_config
 
 
 class DType(EnumMeta):
@@ -71,14 +75,29 @@ class CubeQueryTask(JobtasticTask):
         # connect to the datacube and pass that in to the users function.
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
-        path_prefix = path.join("/tmp", self.request.id)
+        result_dir = get_config("App", "result_dir")
+        path_prefix = path.join(result_dir, self.request.id)
 
         os.makedirs(path_prefix, exist_ok=True)
 
         dc = datacube.Datacube(app=self.name)
         outputs = self.generate_product(dc, path_prefix, **kwargs)
         logging.info(f"got result of {outputs}")
+        self.log_query(path_prefix)
+        self.zip_outputs(path_prefix, outputs)
         # TODO: put the results some where, send notifications etc.
+
+    def log_query(self, path_prefix):
+        output = path.join(path_prefix, "query.json")
+        with open(output, 'w') as f:
+            json.dump(self.request.__dict__, f, skipkeys=True)
+
+    def zip_outputs(self, path_prefix, results):
+        output = os.path.join(path_prefix, self.request.id + "_output.zip")
+        with zipfile.ZipFile(output, 'w') as zf:
+            zf.write(path.join(path_prefix, "query.json"), compress_type=zipfile.ZIP_DEFLATED)
+            for f in results:
+                zf.write(f, compress_type=zipfile.ZIP_DEFLATED)
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
