@@ -31,18 +31,6 @@ def get_config(section, key):
     return _config.get(section, key)
 
 
-def validate_app_key(request):
-    """
-    Get the app key parameter from a request and check that it matches whats in the config as the app key.
-    :param request: a flask request object.
-    :return: Bool, True if and only if the requests app key matches the configured app key
-    """
-
-    if 'APP_KEY' in request.args and request.args['APP_KEY'] == get_config("App", "key"):
-        return True
-    return False
-
-
 # also configure the console logging just in case
 console = logging.StreamHandler()
 console.setLevel(logging.DEBUG)

@@ -4,9 +4,10 @@ import os
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify
 from flask_caching import Cache
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import validate_app_key, get_config
+from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
@@ -64,8 +65,7 @@ def describe():
 
     :return: a JSON encodes list of task description objects.
     """
-    if not validate_app_key(request):
-        abort(403)
+    validate_app_key()
 
     result = list_processes()
 
@@ -74,8 +74,7 @@ def describe():
 
 @app.route('/task/<task_id>', methods=['GET'])
 def task_id(task_id):
-    if not validate_app_key(request):
-        abort(403)
+    validate_app_key()
 
     logging.info(f"looking up task by id {task_id}")
     i = celery_app.control.inspect()
@@ -85,8 +84,7 @@ def task_id(task_id):
 
 @app.route('/task/', methods=['GET'])
 def all_tasks():
-    if not validate_app_key(request):
-        abort(403)
+    validate_app_key()
 
     logging.info("looking up all tasks...")
     # note there must be a worker running or this won't return...
@@ -107,10 +105,27 @@ def all_tasks():
     return jsonify(normalise_task_info(result))
 
 
+@app.route('/token', methods=['POST'])
+def get_token():
+    payload = request.get_json()
+    if not payload['name']:
+        abort(403, "name required")
+
+    if not payload['pass']:
+        abort(403, "pass required")
+
+    logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
+
+    if not users.check_user(payload['name'], payload['pass'], request.remote_addr):
+        abort(403, "bad creds")
+
+    s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
+    return jsonify({'token': s.dumps({'id': payload['name']})})
+
+
 @app.route('/task', methods=['POST'])
 def create_task():
-    if not validate_app_key(request):
-        abort(403)
+    user_id = validate_app_key()
 
     global celery_app
 
@@ -123,7 +138,7 @@ def create_task():
     thing.app = celery_app
 
     # work out the args mapping
-    args = {}
+    args = {'user': user_id}
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
         if valid:
@@ -139,19 +154,21 @@ def create_task():
 
 def normalise_single_task(info):
     result = []
-    for (server, things) in info.items():
-        for (_, tasks) in things.items():
-            (state, t) = tasks
+    if info:
+        for (server, things) in info.items():
+            if things:
+                for (_, tasks) in things.items():
+                    (state, t) = tasks
 
-            result += [{
-                "id": t['id'],
-                "name": t['name'],
-                "time_start": t['time_start'],
-                "args": t['kwargs'],
-                "ack": t['acknowledged'],
-                "server": server,
-                "state": state
-            }]
+                    result += [{
+                        "id": t['id'],
+                        "name": t['name'],
+                        "time_start": t['time_start'],
+                        "args": t['kwargs'],
+                        "ack": t['acknowledged'],
+                        "server": server,
+                        "state": state
+                    }]
 
     return result
 
@@ -160,18 +177,38 @@ def normalise_task_info(info):
     result = []
 
     for section in info:
-        for (server, tasks) in section.items():
-            for t in tasks:
-                result += [{
-                    "id": t['id'],
-                    "name": t['name'],
-                    "time_start": t['time_start'],
-                    "args": t['kwargs'],
-                    "ack": t['acknowledged'],
-                    "server": server
-                }]
+        if section:
+            for (server, tasks) in section.items():
+                for t in tasks:
+                    result += [{
+                        "id": t['id'],
+                        "name": t['name'],
+                        "time_start": t['time_start'],
+                        "args": t['kwargs'],
+                        "ack": t['acknowledged'],
+                        "server": server
+                    }]
 
     return result
+
+
+def validate_app_key():
+    """
+    Get the app key parameter from a request and check that it is a valid token.
+    :return: Bool, True if and only if the requests app key is a valid token
+    """
+
+    if 'APP_KEY' in request.args:
+        s = Serializer(get_config("App", "secret_key"))
+        try:
+            data = s.loads(request.args['APP_KEY'])
+            # TODO: look up the id and make sure its a real one.
+            return data['id']
+        except SignatureExpired:
+            abort(403, "Token expired")
+        except BadSignature:
+            abort(403, "Invalid token")
+    abort(403, "No token")
 
 
 if __name__ == '__main__':
