@@ -108,15 +108,22 @@ def all_tasks():
 @app.route('/token', methods=['POST'])
 def get_token():
     payload = request.get_json()
+    if not payload:
+        abort(403, "no payload")
+
     if not payload['name']:
         abort(403, "name required")
+
+    user = payload['name']
+    if payload['user']:
+        user = payload['user']
 
     if not payload['pass']:
         abort(403, "pass required")
 
     logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
 
-    if not users.check_user(payload['name'], payload['pass'], request.remote_addr):
+    if not users.check_user(user, payload['pass'], request.remote_addr):
         abort(403, "bad creds")
 
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
