@@ -95,9 +95,9 @@ class CubeQueryTask(JobtasticTask):
     def zip_outputs(self, path_prefix, results):
         output = os.path.join(path_prefix, self.request.id + "_output.zip")
         with zipfile.ZipFile(output, 'w') as zf:
-            zf.write(path.join(path_prefix, "query.json"), compress_type=zipfile.ZIP_DEFLATED)
+            zf.write(path.join(path_prefix, "query.json"), arcname="query.json")
             for f in results:
-                zf.write(f, compress_type=zipfile.ZIP_DEFLATED)
+                zf.write(f, arcname=path.basename(f))
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
