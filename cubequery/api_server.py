@@ -5,6 +5,7 @@ from os import path
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
 from flask_caching import Cache
+from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
@@ -29,6 +30,8 @@ static_dir = os.path.abspath('./webroot/static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
+cors = CORS(app, origin=get_config("App", "cors_origin"))
+
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
 

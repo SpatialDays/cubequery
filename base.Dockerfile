@@ -1,4 +1,4 @@
-FROM luigidifraia/dask-datacube:v1.1.0-alpha as BaseStage
+FROM luigidifraia/dask-datacube:v1.2.1-alpha as BaseStage
 LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 
 COPY . /app/
