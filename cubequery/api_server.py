@@ -1,8 +1,9 @@
 import logging
 import os
+from os import path
 
 from celery import Celery
-from flask import Flask, request, abort, render_template, jsonify
+from flask import Flask, request, abort, render_template, jsonify, send_file
 from flask_caching import Cache
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
@@ -105,18 +106,34 @@ def all_tasks():
     return jsonify(normalise_task_info(result))
 
 
+@app.route('/result/<task_id>', methods=['GET'])
+def get_result(task_id):
+    validate_app_key()
+    result_dir = get_config("App", "result_dir")
+    file_name = f"{task_id}_output.zip"
+    target = path.join(result_dir, task_id, file_name)
+    return send_file(target, attachment_filename=file_name)
+
+
 @app.route('/token', methods=['POST'])
 def get_token():
     payload = request.get_json()
+    if not payload:
+        abort(403, "no payload")
+
     if not payload['name']:
         abort(403, "name required")
+
+    user = payload['name']
+    if user in payload:
+        user = payload['user']
 
     if not payload['pass']:
         abort(403, "pass required")
 
     logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
 
-    if not users.check_user(payload['name'], payload['pass'], request.remote_addr):
+    if not users.check_user(user, payload['pass'], request.remote_addr):
         abort(403, "bad creds")
 
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))

@@ -1,5 +1,6 @@
 import bcrypt
 
+from cubequery import ipaddress_matching
 
 _users = {}
 
@@ -25,14 +26,16 @@ def load_users():
 def check_user(username, password, ip_address):
     """
     validate a user in the user list
+
     :param username: the username to check
     :param password: password to check
+    :param ip_address: of the incoming connection to check
     :return: true if and only if the user in the password list and the provided password matches.
     """
 
     load_users()
 
     if _users[username]:
-        if ip_address in _users[username][1]:
+        if ipaddress_matching.match_list(_users[username][1], ip_address):
             return bcrypt.checkpw(bytes(password, "utf-8"), _users[username][0])
     return False
