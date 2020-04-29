@@ -33,7 +33,7 @@ cache = WrappedCache(Cache(app))
 cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True)
 
 logging.info(f"setting up celery connection to {redis_url}")
-celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
+celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'])
 
 # celery_app.conf.update(app.config)
 
