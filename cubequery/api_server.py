@@ -30,7 +30,7 @@ static_dir = os.path.abspath('./webroot/static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True)
+cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
 
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'])
