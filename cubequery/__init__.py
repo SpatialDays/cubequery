@@ -48,6 +48,8 @@ logging.getLogger("rasterio").setLevel(logging.INFO)
 logging.getLogger("fiona").setLevel(logging.INFO)
 logging.getLogger("shapely").setLevel(logging.INFO)
 
+logging.getLogger('flask_cors').setLevel(logging.DEBUG)
+
 logger.addHandler(console)
 
 # For later as we will likely one day want better logging.
