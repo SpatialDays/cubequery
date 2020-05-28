@@ -10,6 +10,7 @@ from jobtastic import JobtasticTask
 from shapely import wkt
 
 from cubequery import get_config
+from cubequery.utils.s3_tools import S3Utils
 
 
 class DType(EnumMeta):
@@ -54,6 +55,22 @@ class CubeQueryTask(JobtasticTask):
             return str
         return str
 
+    def map_kwargs(self, **kwargs):
+        result = {}
+        for k, v in kwargs.items():
+            args = [p for p in self.parameters if p.name == k]
+            if len(args) > 0:
+                arg = args[0]
+                if arg.d_type == DType.INT:
+                    result[k] = int(v)
+                elif arg.d_type in (DType.FLOAT, DType.LAT, DType.LON):
+                    result[k] = float(v)
+                else:
+                    result[k] = v
+            else:
+                result[k] = v
+        return result
+
     def validate_arg(self, name, value):
         search = [p for p in self.parameters if p.name == name]
         if len(search) == 0:
@@ -81,11 +98,14 @@ class CubeQueryTask(JobtasticTask):
         os.makedirs(path_prefix, exist_ok=True)
 
         dc = datacube.Datacube(app=self.name)
-        outputs = self.generate_product(dc, path_prefix, **kwargs)
+        outputs = self.generate_product(dc, path_prefix, **self.map_kwargs(**kwargs))
         logging.info(f"got result of {outputs}")
         self.log_query(path_prefix)
         self.zip_outputs(path_prefix, outputs)
         # TODO: put the results some where, send notifications etc.
+        output_url = self.upload_results(path_prefix)
+
+        self.ping_results(output_url)
 
     def log_query(self, path_prefix):
         output = path.join(path_prefix, "query.json")
@@ -98,6 +118,29 @@ class CubeQueryTask(JobtasticTask):
             zf.write(path.join(path_prefix, "query.json"), arcname="query.json")
             for f in results:
                 zf.write(f, arcname=path.basename(f))
+
+    def upload_results(self, path_prefix):
+        source_file_path = os.path.join(path_prefix, self.request.id + "_output.zip")
+        dest_file_path = os.path.join(get_config("AWS", "path_prefix"), self.request.id + "_output.zip")
+
+        access_key = get_config("AWS", "access_key_id")
+        secret_key = get_config("AWS", "secret_access_key")
+        bucket = get_config("AWS", "bucket")
+
+        s3_tools = S3Utils(access_key, secret_key, bucket, get_config("AWS", "end_point"), get_config("AWS", "region"))
+
+        s3_tools.put_file(source_file_path, dest_file_path)
+
+        return dest_file_path
+
+    def ping_results(self, output_url):
+        result_url = get_config("App", "result_url")
+        if result_url:
+            payload = {
+                "url": output_url,
+                "name": ""
+            }
+            print(payload)
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
