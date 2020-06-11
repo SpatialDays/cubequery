@@ -5,12 +5,12 @@ from os import path
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
 from flask_caching import Cache
+from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
 from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
-
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -29,8 +29,10 @@ static_dir = os.path.abspath('./webroot/static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
+cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
+
 logging.info(f"setting up celery connection to {redis_url}")
-celery_app = Celery('tasks', backend=redis_url, broker=redis_url)
+celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
 
 # celery_app.conf.update(app.config)
 
@@ -149,11 +151,13 @@ def create_task():
     payload = request.get_json()
     logging.info(payload)
     if not is_valid_task(payload['task']):
+        logging.info(f"invalid task payload {payload}")
         abort(400, "invalid task")
 
     thing = load_task_instance(payload['task'])
     thing.app = celery_app
-
+    logging.info(f"found {thing.name} wanted {payload['task']}")
+    logging.info(f"parms: {[p.name for p in thing.parameters]}")
     # work out the args mapping
     args = {'user': user_id}
     for (k, v) in payload['args'].items():

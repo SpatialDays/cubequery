@@ -59,13 +59,14 @@
             clear_div(parent_div);
             let dropdown = document.createElement("select");
             dropdown.id = "process_select";
+            dropdown.onchange = createFields;
             parent_div.appendChild(dropdown);
 
             for (let i = 0; i < system_description.length; i++) {
                 let f = system_description[i];
                 let el = document.createElement("option");
-                el.text=f.display_name;
-                el.value=f.name;
+                el.text = f.display_name;
+                el.value = f.name;
                 el.index = i;
 
                 dropdown.add(el);
@@ -76,7 +77,7 @@
 
             // create the submit button
             let submit_button = document.createElement("button");
-            submit_button.innerText="Submit";
+            submit_button.innerText = "Submit";
             submit_button.onclick = submit_form;
 
             parent_div.appendChild(submit_button)
@@ -84,7 +85,7 @@
 
         function createFields() {
             let field_div = document.getElementById("task_submission_fields");
-            if (!field_div){
+            if (!field_div) {
                 field_div = document.createElement("div");
                 field_div.id = "task_submission_fields";
                 document.getElementById("task_submission_form").appendChild(field_div);
@@ -104,13 +105,13 @@
 
                 let label_el = document.createElement("label");
                 label_el.innerText = p.name;
-                label_el.for=id_string;
+                label_el.for = id_string;
 
                 instance_div.appendChild(label_el);
                 console.log("creating field " + p.name + " with type " + p.type + " and valid values " + p.valid_values.length);
                 if (p.valid_values &&
                     ((["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
-                    ((! ["int", "float", "date"].includes(p.type)) && p.valid_values.length > 0))
+                        ((!["int", "float", "date"].includes(p.type)) && p.valid_values.length > 0))
                 ) {
                     // should be a select input type.
                     let select_el = document.createElement("select");
@@ -118,7 +119,7 @@
                     instance_div.appendChild(select_el);
 
                     select_el.id = id_string;
-                    for (let j = 0; j < p.valid_values.length; j++){
+                    for (let j = 0; j < p.valid_values.length; j++) {
                         let el = document.createElement("option");
                         el.text = p.valid_values[j];
                         el.value = p.valid_values[j];
@@ -138,17 +139,14 @@
                     }
 
                     if (p.type === "int") {
-                         input_el.type = "number";
-                    }
-                    else if (p.type === "float") {
-                         input_el.type = "number";
-                         input_el.step = "0.001";
-                    }
-                    else if (p.type === "date") {
+                        input_el.type = "number";
+                    } else if (p.type === "float") {
+                        input_el.type = "number";
+                        input_el.step = "0.001";
+                    } else if (p.type === "date") {
                         input_el.type = "date";
-                    }
-                    else {
-                         input_el.type = "text";
+                    } else {
+                        input_el.type = "text";
                     }
 
                     instance_div.appendChild(input_el);
@@ -177,16 +175,20 @@
                 args[p.name] = field.value;
             }
 
-            let request = new XMLHttpRequest();
-            let url = "/task";
-            request.open("POST", appendKey(url));
-            request.setRequestHeader("Content-Type", "application/json");
-            request.send(JSON.stringify(
+            let payload = JSON.stringify(
                 {
                     task: task_name,
                     args: args
                 }
-                ));
+            );
+
+            console.log(payload);
+
+            let request = new XMLHttpRequest();
+            let url = "http://localhost:5000/task";
+            request.open("POST", appendKey(url));
+            request.setRequestHeader("Content-Type", "application/json");
+            request.send(payload);
         }
 
         function fetch_token() {
@@ -207,7 +209,7 @@
                     name: user_name,
                     pass: pass
                 }
-                ));
+            ));
 
             return false;
         }
@@ -215,24 +217,25 @@
     </script>
 </head>
 <body>
-    <h1>Test Task Submission Form</h1>
+<h1>Test Task Submission Form</h1>
 
-    <label for="username">User:</label><input id="username" type="text">
-    <label for="pass">Pass:</label><input id="pass" type="password">
-    <button onclick="fetch_token();">log in</button><br>
+<label for="username">User:</label><input id="username" type="text">
+<label for="pass">Pass:</label><input id="pass" type="password">
+<button onclick="fetch_token();">log in</button>
+<br>
 
-    <label for="app_key">App key:</label><input id="app_key" type="text" value="fishfishfish">
+<label for="app_key">App key:</label><input id="app_key" type="text" value="fishfishfish">
 
-    <hr>
-    <h2>Lookup tasks</h2>
-    <label for="task_id">Task ID (leave blank for all tasks):</label><input id="task_id" type="text" value="">
-    <button title="Lookup" onclick="lookupTask()">Lookup</button>
-    <div id="task_look_results"></div>
+<hr>
+<h2>Lookup tasks</h2>
+<label for="task_id">Task ID (leave blank for all tasks):</label><input id="task_id" type="text" value="">
+<button title="Lookup" onclick="lookupTask()">Lookup</button>
+<div id="task_look_results"></div>
 
-    <hr>
-    <h2>Task Submission</h2>
-    <button title="LoadTasks" onclick="load_system_description()">Load Task Information</button>
-    <div id="task_submission_form"></div>
+<hr>
+<h2>Task Submission</h2>
+<button title="LoadTasks" onclick="load_system_description()">Load Task Information</button>
+<div id="task_submission_form"></div>
 
 </body>
 </html>
