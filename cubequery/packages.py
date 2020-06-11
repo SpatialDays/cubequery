@@ -118,7 +118,7 @@ def list_processes():
         importlib.invalidate_caches()
 
     _process_cache = result
-
+    logging.info(f"found {[f['name'] for f in result]}")
     return result
 
 
