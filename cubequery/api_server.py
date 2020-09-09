@@ -141,7 +141,7 @@ def get_token():
         abort(403, "bad creds")
 
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
-    return jsonify({'token': s.dumps({'id': payload['name']})})
+    return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
 
 
 @app.route('/task', methods=['POST'])
@@ -174,7 +174,7 @@ def create_task():
 
     future = thing.delay_or_fail(**{"params": param_block})
 
-    return future.task_id
+    return jsonify({'task_id': future.task_id})
 
 
 def normalise_single_task(info):

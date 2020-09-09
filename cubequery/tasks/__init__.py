@@ -145,15 +145,16 @@ class CubeQueryTask(JobtasticTask):
         if result_url:
 
             # step one get log in token
-            token = login_to_publisher()
+            # token = login_to_publisher()
 
             # step two send payload
             url = f"{get_config('App', 'result_url')}/submit"
             payload = {
-                "url": output_url,
-                "name": self.results['user']
+                "url": f"http://{get_config('AWS', 's3_endpoint')}/{get_config('AWS', 'bucket')}/{output_url}",
+                "name": results['user']
             }
             print(f"payload: {payload}")
+
             req = Request(url, json.dumps(payload).encode(), headers=_http_headers)
             try:
                 resp = urlopen(req)

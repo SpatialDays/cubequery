@@ -11,7 +11,7 @@ for an example of how this should work.
 
 Most of the build for this project works through the `Makefile` 
 
-Run `make docker` to build the base containers to work on top of.
+Run `make docker` to build the base containers to work on top of. On windows run the `build.bat` script
 
 Your build of the containers will need to provide connection details for the [Open Data Cube](https://www.opendatacube.org/).
 
