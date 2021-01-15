@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from os import path
@@ -11,6 +12,7 @@ from jobtastic.cache import WrappedCache
 
 from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
+
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -139,7 +141,7 @@ def get_token():
         abort(403, "bad creds")
 
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
-    return jsonify({'token': s.dumps({'id': payload['name']})})
+    return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
 
 
 @app.route('/task', methods=['POST'])
@@ -168,9 +170,11 @@ def create_task():
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
 
-    future = thing.delay_or_fail(**args)
+    param_block = json.dumps(args)
 
-    return future.task_id
+    future = thing.delay_or_fail(**{"params": param_block})
+
+    return jsonify({'task_id': future.task_id})
 
 
 def normalise_single_task(info):
