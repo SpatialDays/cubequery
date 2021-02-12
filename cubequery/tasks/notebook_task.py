@@ -108,36 +108,6 @@ def _process_parameter_name(parameter, line):
     return parameter
 
 
-def _create_filename(script_path):
-    return os.path.splitext(os.path.basename(script_path))[0]
-
-
-def process_notebook(script_path, target_path):
-    """
-    Create a new copy of this python file replacing the script location pointer and name
-    :param target_path: location where the output script should be created.
-    :param script_path: the script this task should point at.
-    :return:
-    """
-    this_script = os.path.abspath(__file__)
-    filename = _create_filename(script_path)
-    out_file_path = os.path.join(target_path, f"{filename}.py")
-
-    this_file = open(this_script, "r")
-    target_file = open(out_file_path, "w")
-
-    while True:
-        line = this_file.readline()
-        if not line:
-            break
-        line = line.replace("class NoteBook_Task(", f"class {filename}Task(")
-        line = line.replace("path = \"example_notebook.ipynb\"", f"path = \"{script_path}\"")
-        target_file.write(line)
-
-    this_file.close()
-    target_file.close()
-
-
 class NoteBook_Task(CubeQueryTask):
 
     def __init__(self):
@@ -151,6 +121,7 @@ class NoteBook_Task(CubeQueryTask):
 
         set_header = False
         self.function_code = ""
+        self.parameters = []
         for cell in notebook.cells:
             if not set_header and cell.cell_type == "markdown":
                 # parse out the markdown and try and grab the name as the heading and the description as the rest
@@ -162,13 +133,13 @@ class NoteBook_Task(CubeQueryTask):
                 self._process_code(cell.source)
                 pass
 
-
         self._convert_to_function()
 
     def _process_markdown_description(self, markdown):
         description = ""
+        set_display_name = False
         for line in markdown:
-            if not self.display_name and line.startswith("#"):
+            if not set_display_name and line.startswith("#"):
                 # this is the header of the first markdown thing so we can use this as the display_name
                 self.display_name = line[1:]
                 logging.debug(f"setting display_name to {self.display_name}")
@@ -191,8 +162,11 @@ class NoteBook_Task(CubeQueryTask):
             self._append_all_code(code)
 
     def _append_all_code(self, code, indent=1):
+        print("line: ", code)
         for line in code:
-            self.function_code += ("\t" * indent) + line + "\n"
+
+            if line != "" and line.strip() != "" and line.strip()[0] != "%":
+                self.function_code += ("\t" * indent) + line + "\n")
 
     def _process_parameters(self, code):
         # loop over the lines
@@ -230,5 +204,7 @@ class NoteBook_Task(CubeQueryTask):
         function_text = function_text + self.function_code
 
         # now to create the function and add it to the class
+
+        print(function_text)
         function = exec(function_text)
         self.generate_product = MethodType(function, self)

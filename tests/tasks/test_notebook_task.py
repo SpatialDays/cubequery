@@ -72,15 +72,4 @@ class TestNoteBookTask(unittest.TestCase):
         for t in tests:
             self.assertEqual(notebook_task._process_parameter_comment(t[0]), t[1], f"\"{t[0]}\" didn't return {t[1]}")
 
-    def test_process_note_book(self):
-        script_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "../../example_notebook.ipynb"))
-        notebook_task.process_notebook(script_path, "./")
 
-        expected = "tests/tasks/expected_notebook_task.txt"
-        actual = "./example_notebook.py"
-
-        self.assertListEqual(
-            list(io.open(actual)),
-            list(io.open(expected)))
-        # clean up the file. This shouldn't happen if the assert fails so we have something to check.
-        os.remove(actual)

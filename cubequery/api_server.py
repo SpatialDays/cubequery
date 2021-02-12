@@ -10,7 +10,7 @@ from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import get_config, users
+from cubequery import get_config, users, git_packages
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
@@ -45,6 +45,8 @@ celery_app.conf.update(
     task_track_started=True,
     JOBTASTIC_CACHE=cache,
 )
+
+git_packages.process_repo()
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
