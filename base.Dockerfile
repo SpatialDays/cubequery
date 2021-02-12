@@ -1,4 +1,4 @@
-FROM satapps/dask-datacube:v3.1.0-alpha as BaseStage
+FROM satapps/dask-datacube:v3.1.1-alpha as BaseStage
 LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 
 COPY . /app/

@@ -13,6 +13,29 @@
             }
         }
 
+        function fetch_resolution() {
+            let request = new XMLHttpRequest();
+            let url = '/fetch_resolution';
+
+            let key = appendKey(url)
+            let platform = '&platform='+ document.getElementById("arg_platform").value;
+            let params = key+platform
+
+            request.open("GET", params);
+            request.setRequestHeader("Content-Type", "application/json");
+            request.onload = function () {
+                
+                if (request.status >= 200 && request.status < 400) {
+                    let response = JSON.parse(this.response);
+                    console.log(response)
+                }
+            }
+            request.send(JSON.stringify(
+                {platform : document.getElementById("arg_platform").value}
+            ))
+
+        }
+
         function lookupTask() {
             let id = document.getElementById("task_id").value;
             let request = new XMLHttpRequest();
@@ -53,8 +76,6 @@
         }
 
         function createForm() {
-
-
             let parent_div = document.getElementById("task_submission_form");
             clear_div(parent_div);
             let dropdown = document.createElement("select");
@@ -119,6 +140,13 @@
                     instance_div.appendChild(select_el);
 
                     select_el.id = id_string;
+
+                    // Add onChange to arg_platform
+                    if (p.name == 'platform') {
+                        select_el.onchange = fetch_resolution
+                    }
+                    
+                    
                     for (let j = 0; j < p.valid_values.length; j++) {
                         let el = document.createElement("option");
                         el.text = p.valid_values[j];
@@ -157,6 +185,10 @@
                 instance_div.appendChild(description_el);
 
                 field_div.appendChild(instance_div);
+
+                
+
+
             }
         }
 
@@ -213,6 +245,8 @@
 
             return false;
         }
+
+        
 
     </script>
 </head>

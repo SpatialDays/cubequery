@@ -14,9 +14,9 @@ from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
+
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
-
 
 redis_url = get_config("Redis", "url")
 config = {
@@ -29,6 +29,8 @@ template_dir = os.path.abspath('./webroot/templates')
 static_dir = os.path.abspath('./webroot/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+
+
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
 cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
@@ -47,6 +49,7 @@ celery_app.conf.update(
 )
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
+
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
@@ -222,7 +225,7 @@ def validate_app_key():
     Get the app key parameter from a request and check that it is a valid token.
     :return: Bool, True if and only if the requests app key is a valid token
     """
-
+    
     if 'APP_KEY' in request.args:
         s = Serializer(get_config("App", "secret_key"))
         try:
@@ -235,6 +238,20 @@ def validate_app_key():
             abort(403, "Invalid token")
     abort(403, "No token")
 
+# Fetches Available Resolutions of Satellite
+@app.route('/fetch_resolution', methods=['GET', 'POST'])
+def fetch_resolution():
+    validate_app_key()
+    if 'platform' in request.args:
+        platform = request.args['platform']
+        with open('available_resolutions.json') as res_json:
+            data = json.load(res_json)
+            for p in data['platforms']:
+                if platform in p['name']:
+                    return jsonify(p['available_resolutions'])
+            abort(404, "Couldn't find specified platform")
+        
+    abort(404, "No platform selected")
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))
