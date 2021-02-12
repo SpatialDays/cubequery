@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import zipfile
+from datetime import datetime
 from enum import EnumMeta
 from os import path
 from urllib.error import HTTPError
@@ -37,6 +38,16 @@ class Parameter(object):
         self.d_type = d_type
         self.description = description
         self.valid = valid
+
+    def __eq__(self, o: object) -> bool:
+        if not super().__eq__(o):
+            return False
+        if self.name != o.name:
+            return False
+        return True
+
+    def __ne__(self, o: object) -> bool:
+        return super().__ne__(o)
 
 
 class CubeQueryTask(JobtasticTask):
@@ -206,8 +217,14 @@ def validate_d_type(param, value):
             return True
         except Exception:
             return False
+    if param.d_type == DType.DATE:
+        # try and parse it and see what happens
+        try:
+            datetime.strptime(value, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False
     # if it is not one of the above types we can just check it is a string for now.
-    # TODO: More type validations. WKT, DateFormats etc.
     return isinstance(value, str)
 
 
@@ -232,3 +249,19 @@ def check_float(s):
         return True
     except ValueError:
         return False
+
+
+def check_float_range(s, param):
+    if not param.valid:
+        return True
+
+    if not isinstance(param.valid, list):
+        return True
+
+    if len(param.valid) == 2:
+        pass
+    else:
+        pass
+
+    v = float(s)
+

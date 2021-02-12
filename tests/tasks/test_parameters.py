@@ -10,8 +10,9 @@ class TestParameterHandling(unittest.TestCase):
         description = "A test task that shouldn't do anything."
 
         parameters = [
-            Parameter("a", DType.STRING, "string a"),
-            Parameter("b", DType.INT, "int b"),
+            Parameter("a", "param a", DType.STRING, "string a"),
+            Parameter("b", "param b", DType.INT, "int b"),
+            Parameter("c", "param c", DType.DATE, "date c"),
         ]
 
         CubeQueryTask.cal_significant_kwargs(parameters)
@@ -53,6 +54,11 @@ class TestParameterHandling(unittest.TestCase):
         self.assertFalse(test.validate_arg("b", "sjkhgajkdfhgkjds")[0])
         self.assertFalse(test.validate_arg("b", "0485875.35347")[0])
         self.assertFalse(test.validate_arg("b", "-10.0")[0])
+
+    def test_date_validation(self):
+        test = TestParameterHandling.MockTask()
+
+        self.assertTrue(test.validate_arg("adate", "", ))
 
     def test_unknown_param(self):
         test = TestParameterHandling.MockTask()

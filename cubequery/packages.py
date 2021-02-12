@@ -54,6 +54,8 @@ def _task_info(clazz):
         "display_name": clazz.display_name,
         "description": clazz.description,
         "args": params,
+        "img_url": clazz.img_url,
+        "info_url": clazz.info_url,
     }
 
 

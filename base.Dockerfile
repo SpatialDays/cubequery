@@ -1,8 +1,13 @@
-FROM satapps/dask-datacube:v3.1.0-alpha as BaseStage
+FROM satapps/dask-datacube:v3.1.1-alpha as BaseStage
 LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 
 COPY . /app/
 WORKDIR /app/
+
+RUN apt-get update \
+    && apt-get install -yq --no-install-recommends \
+    git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir -r requirements.txt
