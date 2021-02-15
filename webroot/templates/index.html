@@ -24,10 +24,13 @@
             request.open("GET", params);
             request.setRequestHeader("Content-Type", "application/json");
             request.onload = function () {
-                
                 if (request.status >= 200 && request.status < 400) {
                     let response = JSON.parse(this.response);
-                    console.log(response)
+                    let arg_res = document.getElementById('arg_res')
+                    arg_res.options.length = 0;
+                    for(var i in response) {
+                        arg_res.add(new Option(response[i], response[i]));
+                    }
                 }
             }
             request.send(JSON.stringify(
@@ -130,8 +133,9 @@
 
                 instance_div.appendChild(label_el);
                 console.log("creating field " + p.name + " with type " + p.type + " and valid values " + p.valid_values.length);
+                console.log(p)
                 if (p.valid_values &&
-                    ((["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
+                    ((p.name === 'res' || ["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
                         ((!["int", "float", "date"].includes(p.type)) && p.valid_values.length > 0))
                 ) {
                     // should be a select input type.
