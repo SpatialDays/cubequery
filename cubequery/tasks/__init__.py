@@ -26,6 +26,7 @@ class DType(EnumMeta):
     DATE = "date"
     TIME = "time"
     WKT = "wkt"
+    MULTI = "multi"
 
 
 class Parameter(object):
@@ -69,6 +70,8 @@ class CubeQueryTask(JobtasticTask):
                     result[k] = int(v)
                 elif arg.d_type in (DType.FLOAT, DType.LAT, DType.LON):
                     result[k] = float(v)
+                elif arg.d_type == DType.MULTI:
+                    result[k] = v.split('	')
                 else:
                     result[k] = v
             else:
@@ -84,7 +87,49 @@ class CubeQueryTask(JobtasticTask):
         param = search[0]
         if not validate_d_type(param, value):
             return False, f"parameter {name} value did not validate"
+
         return True, ""
+    
+    def validate_args(self, args):
+        """
+        Validates conditions based upon the combination of the parameters provided.
+
+        Loads conditions set in input_conditions.json
+        """
+        with open('input_conditions.json') as res_json: data = json.load(res_json)
+
+        keys = [k for k in data if k in args]
+
+        errors = []
+        
+        for key in keys:
+            for d in data[key]:
+                if d['name'] == args[key]:
+                    for condition in d['conditions'].values():
+
+                        # Integer Range Validation
+                        if condition['type'] == 'int_range':
+                            for c in condition['id']:                            
+                                if len(condition['value'])==2:
+                                    if not (int(args[c]) >= condition['value'][0]) or not(int(args[c]) <= condition['value'][1]):
+                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+                                else:
+                                    if not (int(args[c]) >= condition['value'][0]):
+                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+
+                        # Date Range Validation
+                        if condition['type'] == 'date_range':
+                            for c in condition['id']:
+                                if len(condition['value'])==2:
+                                    if not (args[c] >= condition['value'][0]) or not(args[c] <= condition['value'][1]):
+                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+                                else:
+                                    if not (args[c] >= condition['value'][0]):
+                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+                                        
+        return errors
+        
+    
 
     def calculate_result(self, **kwargs):
         """
@@ -93,13 +138,16 @@ class CubeQueryTask(JobtasticTask):
         :param kwargs: arguments to the tasks.
         :return:
         """
+        
 
         # connect to the datacube and pass that in to the users function.
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
         result_dir = get_config("App", "result_dir")
+        
         path_prefix = path.join(result_dir, self.request.id)
-
+        
+        # FAILING FOR ME
         os.makedirs(path_prefix, exist_ok=True)
 
         args = self.map_kwargs(**kwargs)
@@ -121,10 +169,14 @@ class CubeQueryTask(JobtasticTask):
 
     def zip_outputs(self, path_prefix, results):
         output = os.path.join(path_prefix, self.request.id + "_output.zip")
+        logging.info(f'OUTPUT : {output}')
         with zipfile.ZipFile(output, 'w') as zf:
             zf.write(path.join(path_prefix, "query.json"), arcname="query.json")
             for f in results:
+                logging.info(f'F : {f}')
+                
                 zf.write(f, arcname=path.basename(f))
+
 
     def upload_results(self, path_prefix):
         source_file_path = os.path.join(path_prefix, self.request.id + "_output.zip")

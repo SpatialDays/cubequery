@@ -30,10 +30,13 @@ static_dir = os.path.abspath('./webroot/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
+app.url_map.strict_slashes = False
+
 
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
+cors = CORS(app,  resources={r"/*": {"origins": "*"}},  send_wildcard=True, allow_headers=['Content-Type'])
+
 
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
@@ -125,12 +128,14 @@ def get_result(task_id):
 @app.route('/token', methods=['POST'])
 def get_token():
     payload = request.get_json()
+    logging.info(payload)
     if not payload:
         abort(403, "no payload")
 
     if not payload['name']:
         abort(403, "name required")
 
+    # Needed? If 'user' in payload better?
     user = payload['name']
     if user in payload:
         user = payload['user']
@@ -146,15 +151,22 @@ def get_token():
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
     return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
 
+def make_error(status_code, sub_code, message, action):
+    response = jsonify({
+        'status': status_code,
+        'sub_code': sub_code,
+        'message': message,
+        'action': action
+    })
+    response.status_code = status_code
+    return response
 
 @app.route('/task', methods=['POST'])
 def create_task():
     user_id = validate_app_key()
-
     global celery_app
 
     payload = request.get_json()
-    logging.info(payload)
     if not is_valid_task(payload['task']):
         logging.info(f"invalid task payload {payload}")
         abort(400, "invalid task")
@@ -167,11 +179,20 @@ def create_task():
     args = {'user': user_id}
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
+        
         if valid:
             args[k] = v
         else:
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
+
+    validation = thing.validate_args(args)
+    if validation != []:
+        logging.warning(f"invalid request: {validation}")
+        error = jsonify(validation)
+        error.status_code = 400
+        return error
+        
 
     param_block = json.dumps(args)
 
@@ -238,6 +259,9 @@ def validate_app_key():
             abort(403, "Invalid token")
     abort(403, "No token")
 
+
+
+''' TO REMOVE '''
 # Fetches Available Resolutions of Satellite
 @app.route('/fetch_resolution', methods=['GET', 'POST'])
 def fetch_resolution():
@@ -252,6 +276,17 @@ def fetch_resolution():
             abort(404, "Couldn't find specified platform")
         
     abort(404, "No platform selected")
+
+
+# Fetches All Available Resolutions of Satellite
+@app.route('/fetch_resolutions', methods=['GET', 'POST'])
+def fetch_resolutions():
+    validate_app_key()
+    with open('input_conditions.json') as res_json:
+        data = json.load(res_json)
+        return jsonify(data)        
+    abort(404, "Available Resolutions JSON could not be loaded")
+
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))

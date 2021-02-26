@@ -1,0 +1,202 @@
+{
+  "platform": [
+    {
+      "name": "SENTINEL_2",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            30
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    },
+    {
+      "name": "LANDSAT_4",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            30
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    },
+    {
+      "name": "LANDSAT_5",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            30
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    },
+    {
+      "name": "LANDSAT_6",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            30
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    },
+    {
+      "name": "LANDSAT_7",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            30
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    },
+    {
+      "name": "LANDSAT_8",
+      "conditions": {
+        "available_resolutions": {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range"
+        },
+        "additional_indices": {
+          "id": [
+            "arg_indices"
+          ],
+          "value": "Chlorphyll",
+          "type": "add",
+          "_comment": "Satellite contains extra indice data."
+        },
+        "date_range": {
+          "id": [
+            "start_date",
+            "end_date"
+          ],
+          "value": ["1999-01-01", "2020-01-01"],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+        }
+      }
+    }
+    
+  ]
+}

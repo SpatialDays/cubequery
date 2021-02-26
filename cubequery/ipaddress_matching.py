@@ -1,5 +1,4 @@
 
-
 def match(pattern, address):
     """
     Match ip address patterns.

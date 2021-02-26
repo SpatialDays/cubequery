@@ -224,7 +224,23 @@
             let url = "/task";
             request.open("POST", appendKey(url));
             request.setRequestHeader("Content-Type", "application/json");
+
+            request.onload = function (e) {
+                if (request.readyState == 4 && request.status == 200) {
+                    // Request completed without error
+                    document.getElementById('error_message').innerHTML = ''
+                }
+                else {
+                    // Handle Error
+                    console.log('FFFF')
+                    console.log(e['target']['response'])
+                    document.getElementById('error_message').innerHTML = e['target']['response']
+                }
+            };
+
+
             request.send(payload);
+
         }
 
         function fetch_token() {
@@ -255,6 +271,7 @@
     </script>
 </head>
 <body>
+<div id="error_message"></div>
 <h1>Test Task Submission Form</h1>
 
 <label for="username">User:</label><input id="username" type="text">
