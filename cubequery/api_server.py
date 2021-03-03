@@ -13,8 +13,6 @@ from jobtastic.cache import WrappedCache
 from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
-
-
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
 
@@ -31,13 +29,10 @@ static_dir = os.path.abspath('./webroot/static')
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 app.url_map.strict_slashes = False
-
-
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-# TODO: Turn into getConfig
-cors = CORS(app, resources={r"/*": {"origins": "*"}}, send_wildcard=True, allow_headers=['Content-Type'])
 
+cors = CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
@@ -58,7 +53,6 @@ celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 settings_jsoned = ""
 with app.app_context():
-    # call your method here
     with open('input_conditions.json') as res_json:
         settings_jsoned = jsonify(json.load(res_json))  
         
@@ -134,14 +128,12 @@ def get_result(task_id):
 @app.route('/token', methods=['POST'])
 def get_token():
     payload = request.get_json()
-    logging.info(payload)
     if not payload:
         abort(403, "no payload")
 
     if not payload['name']:
         abort(403, "name required")
 
-    # Needed? If 'user' in payload better?
     user = payload['name']
     if user in payload:
         user = payload['user']
@@ -156,16 +148,6 @@ def get_token():
 
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
     return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
-
-def make_error(status_code, sub_code, message, action):
-    response = jsonify({
-        'status': status_code,
-        'sub_code': sub_code,
-        'message': message,
-        'action': action
-    })
-    response.status_code = status_code
-    return response
 
 @app.route('/task', methods=['POST'])
 def create_task():
@@ -184,7 +166,7 @@ def create_task():
     # work out the args mapping
     args = {'user': user_id}
     for (k, v) in payload['args'].items():
-        valid, msg = thing.validate_arg(k, v)        
+        valid, msg = thing.validate_arg(k, v)
         if valid:
             args[k] = v
         else:
@@ -251,7 +233,6 @@ def validate_app_key():
     Get the app key parameter from a request and check that it is a valid token.
     :return: Bool, True if and only if the requests app key is a valid token
     """
-    
     if 'APP_KEY' in request.args:
         s = Serializer(get_config("App", "secret_key"))
         try:

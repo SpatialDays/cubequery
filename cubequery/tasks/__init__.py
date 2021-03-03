@@ -41,8 +41,6 @@ class Parameter(object):
         self.description = description
         self.valid = valid
 
-_settings_json = None
-
 
 class CubeQueryTask(JobtasticTask):
 
@@ -81,7 +79,6 @@ class CubeQueryTask(JobtasticTask):
             else:
                 logging.warning(f"Not found a parameter entry for {k}")
                 result[k] = v
-        logging.info(result)
         return result
 
     def validate_arg(self, name, value):
@@ -92,11 +89,8 @@ class CubeQueryTask(JobtasticTask):
         param = search[0]
         if not validate_d_type(param, value):
             return False, f"parameter {name} value did not validate"
-
         return True, ""
-    
-    
-    
+
     def validate_args(self, args):
         """
         Validates conditions based upon the combination of the parameters provided.
@@ -164,14 +158,11 @@ class CubeQueryTask(JobtasticTask):
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
         result_dir = get_config("App", "result_dir")
-        
         path_prefix = path.join(result_dir, self.request.id)
-        
-        # FAILING FOR ME
         os.makedirs(path_prefix, exist_ok=True)
 
         args = self.map_kwargs(**kwargs)
-        
+
         dc = datacube.Datacube(app=self.name)
         outputs = self.generate_product(dc, path_prefix, **args)
         logging.info(f"got result of {outputs}")
@@ -189,14 +180,10 @@ class CubeQueryTask(JobtasticTask):
 
     def zip_outputs(self, path_prefix, results):
         output = os.path.join(path_prefix, self.request.id + "_output.zip")
-        logging.info(f'OUTPUT : {output}')
         with zipfile.ZipFile(output, 'w') as zf:
             zf.write(path.join(path_prefix, "query.json"), arcname="query.json")
-            for f in results:
-                logging.info(f'F : {f}')
-                
+            for f in results:                
                 zf.write(f, arcname=path.basename(f))
-
 
     def upload_results(self, path_prefix):
         source_file_path = os.path.join(path_prefix, self.request.id + "_output.zip")
@@ -321,7 +308,6 @@ def validate_d_type(param, value):
     if param.d_type == DType.WKT:
         # try and parse it and see what happens
         try:
-            wkt.loads(value)
             validate_spatial_query(value)
             return True
         except Exception:
