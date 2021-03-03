@@ -13,8 +13,10 @@ from jobtastic.cache import WrappedCache
 from cubequery import get_config, users
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
+
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
+
 
 redis_url = get_config("Redis", "url")
 config = {
@@ -27,11 +29,9 @@ template_dir = os.path.abspath('./webroot/templates')
 static_dir = os.path.abspath('./webroot/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
-
 app.url_map.strict_slashes = False
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-
 cors = CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 logging.info(f"setting up celery connection to {redis_url}")
@@ -149,12 +149,15 @@ def get_token():
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
     return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
 
+
 @app.route('/task', methods=['POST'])
 def create_task():
     user_id = validate_app_key()
+    
     global celery_app
 
     payload = request.get_json()
+    logging.info(payload)
     if not is_valid_task(payload['task']):
         logging.info(f"invalid task payload {payload}")
         abort(400, "invalid task")
@@ -179,7 +182,6 @@ def create_task():
         error = jsonify(validation)
         error.status_code = 400
         return error
-        
 
     param_block = json.dumps(args)
 
@@ -233,6 +235,7 @@ def validate_app_key():
     Get the app key parameter from a request and check that it is a valid token.
     :return: Bool, True if and only if the requests app key is a valid token
     """
+    
     if 'APP_KEY' in request.args:
         s = Serializer(get_config("App", "secret_key"))
         try:

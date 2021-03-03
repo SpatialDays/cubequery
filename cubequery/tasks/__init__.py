@@ -152,13 +152,13 @@ class CubeQueryTask(JobtasticTask):
         :param kwargs: arguments to the tasks.
         :return:
         """
-        
 
         # connect to the datacube and pass that in to the users function.
         # Everything should be talking to the datacube here so makes sense to pull it out and make things
         # easier for the users.
         result_dir = get_config("App", "result_dir")
         path_prefix = path.join(result_dir, self.request.id)
+        
         os.makedirs(path_prefix, exist_ok=True)
 
         args = self.map_kwargs(**kwargs)
@@ -182,7 +182,7 @@ class CubeQueryTask(JobtasticTask):
         output = os.path.join(path_prefix, self.request.id + "_output.zip")
         with zipfile.ZipFile(output, 'w') as zf:
             zf.write(path.join(path_prefix, "query.json"), arcname="query.json")
-            for f in results:                
+            for f in results:
                 zf.write(f, arcname=path.basename(f))
 
     def upload_results(self, path_prefix):
