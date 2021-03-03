@@ -90,7 +90,7 @@ def load_module(root, file, package_root):
 
 _process_cache = None  # TODO: some way of resetting this...
 
-
+# Views the available Python processes in the /processes/ directory
 def list_processes():
     global _process_cache
 
@@ -98,10 +98,12 @@ def list_processes():
         return _process_cache
 
     added = False
+    
     result = []
-    dir_list = get_config("App", "extra_path")
+    dir_list = get_config("App", "extra_path") # /processes/
     if dir_list != "":
         parts = dir_list.split(';')
+        logging.info(parts)
         for p in parts:
             if p not in sys.path:
                 logger.info(f"adding {p} to python path")

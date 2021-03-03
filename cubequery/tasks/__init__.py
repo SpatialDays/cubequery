@@ -7,6 +7,8 @@ from os import path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from flask import url_for
+
 import datacube
 from jobtastic import JobtasticTask
 from shapely import wkt
@@ -38,6 +40,8 @@ class Parameter(object):
         self.d_type = d_type
         self.description = description
         self.valid = valid
+
+_settings_json = None
 
 
 class CubeQueryTask(JobtasticTask):
@@ -71,12 +75,13 @@ class CubeQueryTask(JobtasticTask):
                 elif arg.d_type in (DType.FLOAT, DType.LAT, DType.LON):
                     result[k] = float(v)
                 elif arg.d_type == DType.MULTI:
-                    result[k] = v.split('	')
+                    result[k] = v
                 else:
                     result[k] = v
             else:
                 logging.warning(f"Not found a parameter entry for {k}")
                 result[k] = v
+        logging.info(result)
         return result
 
     def validate_arg(self, name, value):
@@ -90,44 +95,59 @@ class CubeQueryTask(JobtasticTask):
 
         return True, ""
     
+    
+    
     def validate_args(self, args):
         """
         Validates conditions based upon the combination of the parameters provided.
 
         Loads conditions set in input_conditions.json
         """
-        with open('input_conditions.json') as res_json: data = json.load(res_json)
+        
+        
+        _settings_json = url_for('fetch_form_settings')
+        
+        if not _settings_json:          
+            with open('input_conditions.json') as res_json: 
+                _settings_json = json.load(res_json)  
 
-        keys = [k for k in data if k in args]
+        keys = [k for k in _settings_json if k in args]
 
         errors = []
         
+        # Validates information against input_conditions.json
         for key in keys:
-            for d in data[key]:
+            for d in _settings_json[key]:
                 if d['name'] == args[key]:
-                    for condition in d['conditions'].values():
+                    for condition in d['conditions']:
 
                         # Integer Range Validation
                         if condition['type'] == 'int_range':
-                            for c in condition['id']:                            
-                                if len(condition['value'])==2:
-                                    if not (int(args[c]) >= condition['value'][0]) or not(int(args[c]) <= condition['value'][1]):
-                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
-                                else:
-                                    if not (int(args[c]) >= condition['value'][0]):
-                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+                            for c in condition['id']:
+                                if args[c]:                            
+                                    if len(condition['value'])==2:
+                                        if not (int(args[c]) >= condition['value'][0]) or not(int(args[c]) <= condition['value'][1]):
+                                            errors.append(self.create_error_message(condition))
+                                    else:
+                                        if not (int(args[c]) >= condition['value'][0]):
+                                            errors.append(self.create_error_message(condition))
 
                         # Date Range Validation
                         if condition['type'] == 'date_range':
                             for c in condition['id']:
-                                if len(condition['value'])==2:
-                                    if not (args[c] >= condition['value'][0]) or not(args[c] <= condition['value'][1]):
-                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
-                                else:
-                                    if not (args[c] >= condition['value'][0]):
-                                        errors.append({'Key':condition['id'], 'Error':condition['type'], 'Comment':condition['_comment']})
+                                if args[c]:
+                                    if len(condition['value'])==2:
+                                        if not (args[c] >= condition['value'][0]) or not(args[c] <= condition['value'][1]):
+                                            errors.append(self.create_error_message(condition))
+                                    else:
+                                        if not (args[c] >= condition['value'][0]):
+                                            errors.append(self.create_error_message(condition))
                                         
         return errors
+    
+
+    def create_error_message(self, condition):
+        return {'Key':condition['id'], 'Error':condition['error_message'], 'Comment':condition['_comment']}
         
     
 
@@ -151,7 +171,7 @@ class CubeQueryTask(JobtasticTask):
         os.makedirs(path_prefix, exist_ok=True)
 
         args = self.map_kwargs(**kwargs)
-
+        
         dc = datacube.Datacube(app=self.name)
         outputs = self.generate_product(dc, path_prefix, **args)
         logging.info(f"got result of {outputs}")
@@ -235,12 +255,59 @@ def login_to_publisher():
         logging.error(f"could not log into publish server {e}")
         raise e
 
+def validate_spatial_query(value):
+
+    parsed_polygon = wkt.loads(value)
+
+    '''
+    Returns validity of geometery (bool)
+    * Whole of Fiji = True
+    * Suva = True
+    '''
+    valid_geom = parsed_polygon.is_valid
+
+    '''
+    Returns area of polygon
+    * Whole of Fiji = 1.8662849915034905
+    * Suva = 0.017204474747948426
+    '''
+    area = parsed_polygon.area
+
+    
+    '''
+    Returns length of polygon
+    * Whole of Fiji = 5.744147695084358
+    * Suva = 0.5289966094297256
+    '''
+    length = parsed_polygon.length
+
+
+    '''
+    Returns centre of polygon
+    * Whole of Fiji = POINT (177.981496870476 -17.85590782082417)
+    * Suva = POINT (178.4752579487157 -18.09127704393749)
+    '''
+    centroid = parsed_polygon.centroid
+
+
+    '''
+    Returns bool for polygon inside Fiji
+    '''
+    fiji_polygon = wkt.loads('POLYGON((177.0421658157887 -17.359201951740324,178.9208279251632 -17.359201951740324,178.9208279251632 -18.352613689908015,177.0421658157887 -18.352613689908015,177.0421658157887 -17.359201951740324))')
+    contains = fiji_polygon.contains(parsed_polygon)
+
+
+
+    return True
+
 
 def validate_d_type(param, value):
     if param.d_type == DType.INT:
         return check_int(value)
     if param.d_type == DType.FLOAT:
         return check_float(value)
+    if param.d_type == DType.MULTI:
+        return True
     if param.d_type == DType.LAT:
         if check_float(value):
             v = float(value)
@@ -255,6 +322,7 @@ def validate_d_type(param, value):
         # try and parse it and see what happens
         try:
             wkt.loads(value)
+            validate_spatial_query(value)
             return True
         except Exception:
             return False
@@ -262,6 +330,10 @@ def validate_d_type(param, value):
     # TODO: More type validations. WKT, DateFormats etc.
     return isinstance(value, str)
 
+def check_multi(s):
+    if isinstance(s, list):
+        return True
+    return False
 
 def check_int(s):
     if isinstance(s, int):

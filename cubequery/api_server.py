@@ -35,7 +35,8 @@ app.url_map.strict_slashes = False
 
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-cors = CORS(app,  resources={r"/*": {"origins": "*"}},  send_wildcard=True, allow_headers=['Content-Type'])
+# TODO: Turn into getConfig
+cors = CORS(app, resources={r"/*": {"origins": "*"}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 
 logging.info(f"setting up celery connection to {redis_url}")
@@ -55,7 +56,12 @@ packages = [m['name'].replace("/", ".") for m in list_processes()]
 
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
-
+settings_jsoned = ""
+with app.app_context():
+    # call your method here
+    with open('input_conditions.json') as res_json:
+        settings_jsoned = jsonify(json.load(res_json))  
+        
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -178,8 +184,7 @@ def create_task():
     # work out the args mapping
     args = {'user': user_id}
     for (k, v) in payload['args'].items():
-        valid, msg = thing.validate_arg(k, v)
-        
+        valid, msg = thing.validate_arg(k, v)        
         if valid:
             args[k] = v
         else:
@@ -259,34 +264,16 @@ def validate_app_key():
             abort(403, "Invalid token")
     abort(403, "No token")
 
-
-
-''' TO REMOVE '''
-# Fetches Available Resolutions of Satellite
-@app.route('/fetch_resolution', methods=['GET', 'POST'])
-def fetch_resolution():
+# Fetches Settings JSON
+@app.route('/fetch_form_settings', methods=['GET', 'POST'])
+def fetch_form_settings():
     validate_app_key()
-    if 'platform' in request.args:
-        platform = request.args['platform']
-        with open('available_resolutions.json') as res_json:
-            data = json.load(res_json)
-            for p in data['platforms']:
-                if platform in p['name']:
-                    return jsonify(p['available_resolutions'])
-            abort(404, "Couldn't find specified platform")
-        
-    abort(404, "No platform selected")
-
-
-# Fetches All Available Resolutions of Satellite
-@app.route('/fetch_resolutions', methods=['GET', 'POST'])
-def fetch_resolutions():
-    validate_app_key()
-    with open('input_conditions.json') as res_json:
-        data = json.load(res_json)
-        return jsonify(data)        
-    abort(404, "Available Resolutions JSON could not be loaded")
-
+    
+    global settings_jsoned
+    if settings_jsoned == "":
+        with open('input_conditions.json') as res_json:
+            settings_jsoned = jsonify(json.load(res_json))
+    return settings_jsoned
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))

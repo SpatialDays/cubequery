@@ -2,8 +2,8 @@
   "platform": [
     {
       "name": "SENTINEL_2",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
@@ -12,64 +12,73 @@
             30
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
+        {
           "id": [
-            "arg_indices"
+            "indices"
           ],
-          "value": "Chlorphyll",
+          "value": ["CHLORPHYLL"],
           "type": "add",
           "_comment": "Satellite contains extra indice data."
         },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01"],
+          "value": [
+            "2003-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     },
     {
       "name": "LANDSAT_4",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
           "value": [
             10,
-            30
+            50
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
-          "id": [
-            "arg_indices"
-          ],
-          "value": "Chlorphyll",
-          "type": "add",
-          "_comment": "Satellite contains extra indice data."
-        },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01"],
+          "value": [
+            "1999-01-01",
+            "2001-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     },
     {
       "name": "LANDSAT_5",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
@@ -78,31 +87,32 @@
             30
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
-          "id": [
-            "arg_indices"
-          ],
-          "value": "Chlorphyll",
-          "type": "add",
-          "_comment": "Satellite contains extra indice data."
-        },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01"],
+          "value": [
+            "2010-01-01",
+            "2015-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     },
     {
       "name": "LANDSAT_6",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
@@ -111,92 +121,91 @@
             30
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
-          "id": [
-            "arg_indices"
-          ],
-          "value": "Chlorphyll",
-          "type": "add",
-          "_comment": "Satellite contains extra indice data."
-        },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01"],
+          "value": [
+            "2005-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     },
     {
       "name": "LANDSAT_7",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
           "value": [
-            10,
             30
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
-          "id": [
-            "arg_indices"
-          ],
-          "value": "Chlorphyll",
-          "type": "add",
-          "_comment": "Satellite contains extra indice data."
-        },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01"],
+          "value": [
+            "1999-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     },
     {
       "name": "LANDSAT_8",
-      "conditions": {
-        "available_resolutions": {
+      "conditions": [
+        {
           "id": [
             "res"
           ],
           "value": [
-            10
+            15,
+            100
           ],
           "type": "int_range",
-          "_comment": "Satellite capable of set resolution range"
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
         },
-        "additional_indices": {
-          "id": [
-            "arg_indices"
-          ],
-          "value": "Chlorphyll",
-          "type": "add",
-          "_comment": "Satellite contains extra indice data."
-        },
-        "date_range": {
+        {
           "id": [
             "start_date",
-            "end_date"
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
           ],
-          "value": ["1999-01-01", "2020-01-01"],
+          "value": [
+            "1999-01-01"
+          ],
           "type": "date_range",
-          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active."
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
         }
-      }
+      ]
     }
-    
   ]
 }
