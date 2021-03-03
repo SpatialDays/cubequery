@@ -158,7 +158,7 @@ class CubeQueryTask(JobtasticTask):
         # easier for the users.
         result_dir = get_config("App", "result_dir")
         path_prefix = path.join(result_dir, self.request.id)
-        
+
         os.makedirs(path_prefix, exist_ok=True)
 
         args = self.map_kwargs(**kwargs)

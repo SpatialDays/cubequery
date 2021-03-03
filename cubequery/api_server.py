@@ -48,7 +48,6 @@ celery_app.conf.update(
 )
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
-
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 settings_jsoned = ""
@@ -153,7 +152,7 @@ def get_token():
 @app.route('/task', methods=['POST'])
 def create_task():
     user_id = validate_app_key()
-    
+
     global celery_app
 
     payload = request.get_json()
@@ -235,7 +234,7 @@ def validate_app_key():
     Get the app key parameter from a request and check that it is a valid token.
     :return: Bool, True if and only if the requests app key is a valid token
     """
-    
+
     if 'APP_KEY' in request.args:
         s = Serializer(get_config("App", "secret_key"))
         try:
