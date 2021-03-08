@@ -23,9 +23,17 @@ Appends an additional value to the IDs specified.
 * Only works with select and similar DOM types.
 * Value must be an array format with either string or integer type.
 
+### Display_Text
+Changes label value on select option
+* Does not change the actual value sent and received from server, only what is visible to the user
+* It is possible to only change a single label out of multiple values
 
 ## Error Messages
 When validating the arguments passed in from the back-end, all unexpected values will be passed into an error array to be presented in the front-end. This will contain the error_message value from the JSON file. Not to be confused with _comment which is in reference only for the developer to get an explanation as to what the validation is checking for.
+
+## Processes
+If an array of processes are given, the conditions will only apply to those processes listed. 
+* 
 
 ## Example
 

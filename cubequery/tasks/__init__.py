@@ -96,10 +96,13 @@ class CubeQueryTask(JobtasticTask):
         Validates conditions based upon the combination of the parameters provided.
 
         Loads conditions set in input_conditions.json
+        
         """
         
+        #args = {'user': 'test_user', 'aoi': 'POLYGON((176.77849394078876 -17.133616242815744,179.34929472203808 -17.133616242815744,179.34929472203808 -19.2729492234721,176.77849394078876 -19.2729492234721,176.77849394078876 -17.133616242815744))', 'output_projection': 'EPSG:3460', 'start_date': '1900-03-01', 'end_date': '1902-03-08', 'platform': 'SENTINEL_2', 'res': '7090', 'bands': ['Coastal Aerosol', 'Blue', 'Green', 'Red', 'Near Infrared', 'SWIR 1', 'SWIR 2', 'Panchromatic', 'Cirrus', 'Thermal Infrared 1', 'Thermal Infrared 2'], 'aoi_crs': 'EPSG:4326', 'mosaic_type': 'min', 'indices': 'EVI'}
+        #_settings_json = url_for('fetch_form_settings')
         
-        _settings_json = url_for('fetch_form_settings')
+        _settings_json = None
         
         if not _settings_json:          
             with open('input_conditions.json') as res_json: 
@@ -108,6 +111,10 @@ class CubeQueryTask(JobtasticTask):
         keys = [k for k in _settings_json if k in args]
 
         errors = []
+        
+        # Validates AOI
+        if 'aoi' in args:
+            errors = validate_spatial_query(args['aoi'])
         
         # Validates information against input_conditions.json
         for key in keys:
@@ -118,31 +125,26 @@ class CubeQueryTask(JobtasticTask):
                         # Integer Range Validation
                         if condition['type'] == 'int_range':
                             for c in condition['id']:
-                                if args[c]:                            
+                                if c in args:                            
                                     if len(condition['value'])==2:
                                         if not (int(args[c]) >= condition['value'][0]) or not(int(args[c]) <= condition['value'][1]):
-                                            errors.append(self.create_error_message(condition))
+                                            errors.append(create_error_message(condition))
                                     else:
                                         if not (int(args[c]) >= condition['value'][0]):
-                                            errors.append(self.create_error_message(condition))
+                                            errors.append(create_error_message(condition))
 
                         # Date Range Validation
                         if condition['type'] == 'date_range':
                             for c in condition['id']:
-                                if args[c]:
+                                if c in args:
                                     if len(condition['value'])==2:
                                         if not (args[c] >= condition['value'][0]) or not(args[c] <= condition['value'][1]):
-                                            errors.append(self.create_error_message(condition))
+                                            errors.append(create_error_message(condition))
                                     else:
                                         if not (args[c] >= condition['value'][0]):
-                                            errors.append(self.create_error_message(condition))
-                                        
-        return errors
-    
-
-    def create_error_message(self, condition):
-        return {'Key':condition['id'], 'Error':condition['error_message'], 'Comment':condition['_comment']}
+                                            errors.append(create_error_message(condition))
         
+        return errors
     
 
     def calculate_result(self, **kwargs):
@@ -242,50 +244,55 @@ def login_to_publisher():
         logging.error(f"could not log into publish server {e}")
         raise e
 
+def create_error_message(condition):
+    return {'Key':condition['id'], 'Error':condition['error_message'], 'Comment':condition['_comment']}
+
+# Dependent on product
 def validate_spatial_query(value):
 
-    parsed_polygon = wkt.loads(value)
+    errors = []
 
+    try:
+        parsed_polygon = wkt.loads(value)
+    except:
+        return [create_error_message({'id':'aoi', 'error_message':'Polygon could not be loaded', '_comment':'Polygon could not be loaded'})]
+
+    
     '''
     Returns validity of geometery (bool)
     * Whole of Fiji = True
     * Suva = True
     '''
     valid_geom = parsed_polygon.is_valid
+    if not valid_geom:
+        errors.append(create_error_message({'id':'aoi', 'error_message':'Geometry not a valid polygon', '_comment':'Geometry not a valid polygon'}))
 
     '''
-    Returns area of polygon
+    Returns area of polygon - About 1/4 of country ... 0.25 
     * Whole of Fiji = 1.8662849915034905
     * Suva = 0.017204474747948426
     '''
     area = parsed_polygon.area
-
-    
-    '''
-    Returns length of polygon
-    * Whole of Fiji = 5.744147695084358
-    * Suva = 0.5289966094297256
-    '''
-    length = parsed_polygon.length
-
-
-    '''
-    Returns centre of polygon
-    * Whole of Fiji = POINT (177.981496870476 -17.85590782082417)
-    * Suva = POINT (178.4752579487157 -18.09127704393749)
-    '''
-    centroid = parsed_polygon.centroid
-
+    if area > 0.25:
+        errors.append(create_error_message({'id':'aoi', 'error_message':'AOI area is too large', '_comment':'Size of polygon is too large'}))
 
     '''
     Returns bool for polygon inside Fiji
     '''
     fiji_polygon = wkt.loads('POLYGON((177.0421658157887 -17.359201951740324,178.9208279251632 -17.359201951740324,178.9208279251632 -18.352613689908015,177.0421658157887 -18.352613689908015,177.0421658157887 -17.359201951740324))')
     contains = fiji_polygon.contains(parsed_polygon)
+    if contains == False:
+        errors.append(create_error_message({'id':'aoi', 'error_message':'AOI out of Fiji bounds', '_comment':'AOI is either completely or partially out of the Fiji bounds'}))
 
 
+    '''
+    Bounds
+    
 
-    return True
+    print(parsed_polygon.bounds)
+    '''
+
+    return errors
 
 
 def validate_d_type(param, value):
@@ -308,7 +315,7 @@ def validate_d_type(param, value):
     if param.d_type == DType.WKT:
         # try and parse it and see what happens
         try:
-            validate_spatial_query(value)
+            wkt.loads(value)
             return True
         except Exception:
             return False
