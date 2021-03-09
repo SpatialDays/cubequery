@@ -247,7 +247,7 @@ def login_to_publisher():
 def create_error_message(condition):
     return {'Key':condition['id'], 'Error':condition['error_message'], 'Comment':condition['_comment']}
 
-# Dependent on product
+# TODO: Bounds conversion and sometimes spatial query dependent on product
 def validate_spatial_query(value):
 
     errors = []
@@ -283,14 +283,6 @@ def validate_spatial_query(value):
     contains = fiji_polygon.contains(parsed_polygon)
     if contains == False:
         errors.append(create_error_message({'id':'aoi', 'error_message':'AOI out of Fiji bounds', '_comment':'AOI is either completely or partially out of the Fiji bounds'}))
-
-
-    '''
-    Bounds
-    
-
-    print(parsed_polygon.bounds)
-    '''
 
     return errors
 
