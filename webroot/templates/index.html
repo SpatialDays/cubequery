@@ -13,32 +13,6 @@
             }
         }
 
-        function fetch_resolution() {
-            let request = new XMLHttpRequest();
-            let url = '/fetch_resolution';
-
-            let key = appendKey(url)
-            let platform = '&platform='+ document.getElementById("arg_platform").value;
-            let params = key+platform
-
-            request.open("GET", params);
-            request.setRequestHeader("Content-Type", "application/json");
-            request.onload = function () {
-                if (request.status >= 200 && request.status < 400) {
-                    let response = JSON.parse(this.response);
-                    let arg_res = document.getElementById('arg_res')
-                    arg_res.options.length = 0;
-                    for(var i in response) {
-                        arg_res.add(new Option(response[i], response[i]));
-                    }
-                }
-            }
-            request.send(JSON.stringify(
-                {platform : document.getElementById("arg_platform").value}
-            ))
-
-        }
-
         function lookupTask() {
             let id = document.getElementById("task_id").value;
             let request = new XMLHttpRequest();
@@ -79,6 +53,8 @@
         }
 
         function createForm() {
+
+
             let parent_div = document.getElementById("task_submission_form");
             clear_div(parent_div);
             let dropdown = document.createElement("select");
@@ -133,9 +109,8 @@
 
                 instance_div.appendChild(label_el);
                 console.log("creating field " + p.name + " with type " + p.type + " and valid values " + p.valid_values.length);
-                console.log(p)
                 if (p.valid_values &&
-                    ((p.name === 'res' || ["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
+                    ((["int", "float", "date"].includes(p.type) && p.valid_values.length > 2) ||
                         ((!["int", "float", "date"].includes(p.type)) && p.valid_values.length > 0))
                 ) {
                     // should be a select input type.
@@ -144,13 +119,6 @@
                     instance_div.appendChild(select_el);
 
                     select_el.id = id_string;
-
-                    // Add onChange to arg_platform
-                    if (p.name == 'platform') {
-                        select_el.onchange = fetch_resolution
-                    }
-                    
-                    
                     for (let j = 0; j < p.valid_values.length; j++) {
                         let el = document.createElement("option");
                         el.text = p.valid_values[j];
@@ -189,10 +157,6 @@
                 instance_div.appendChild(description_el);
 
                 field_div.appendChild(instance_div);
-
-                
-
-
             }
         }
 
@@ -224,23 +188,7 @@
             let url = "/task";
             request.open("POST", appendKey(url));
             request.setRequestHeader("Content-Type", "application/json");
-
-            request.onload = function (e) {
-                if (request.readyState == 4 && request.status == 200) {
-                    // Request completed without error
-                    document.getElementById('error_message').innerHTML = ''
-                }
-                else {
-                    // Handle Error
-                    console.log('FFFF')
-                    console.log(e['target']['response'])
-                    document.getElementById('error_message').innerHTML = e['target']['response']
-                }
-            };
-
-
             request.send(payload);
-
         }
 
         function fetch_token() {
@@ -266,12 +214,9 @@
             return false;
         }
 
-        
-
     </script>
 </head>
 <body>
-<div id="error_message"></div>
 <h1>Test Task Submission Form</h1>
 
 <label for="username">User:</label><input id="username" type="text">
