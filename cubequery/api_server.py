@@ -164,12 +164,10 @@ def create_task():
     thing = load_task_instance(payload['task'])
     thing.app = celery_app
     logging.info(f"found {thing.name} wanted {payload['task']}")
-    params = [p.name for p in thing.parameters]
-    logging.info(f"parms: {params}")
+    logging.info(f"parms: {[p.name for p in thing.parameters]}")
     # work out the args mapping
     args = {'user': user_id}
-    
-    thing.add_values(payload['args'].items())
+
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
         if valid:

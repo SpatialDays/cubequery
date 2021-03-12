@@ -1,4 +1,5 @@
 import bcrypt
+import logging
 
 from cubequery import ipaddress_matching
 
@@ -38,6 +39,6 @@ def check_user(username, password, ip_address):
         if _users[username]:
             if ipaddress_matching.match_list(_users[username][1], ip_address):
                 return bcrypt.checkpw(bytes(password, "utf-8"), _users[username][0])
-    except:
-        pass
+    except Exception as e:
+        logging.warning(f'User validation error :: {e}')
     return False

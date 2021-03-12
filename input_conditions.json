@@ -4,9 +4,12 @@
       "name": "EPSG:3460",
       "conditions": [
         {
-          "value": "TEST!!!!",
+          "value": "ESPG:9999",
           "type": "display_text",
-          "_comment": "Changed display name of platform."
+          "_comment": "Changed display name of platform.",
+          "processes": [
+            "processes.aggregate_indices.AggregateIndices"
+          ]
         }
       ]
     }
@@ -42,11 +45,6 @@
             "type": "date_range",
             "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
             "error_message": "Dates not matching with satellite capabilities"
-          },
-          {
-            "value": "Sentinel-1",
-            "type": "display_text",
-            "_comment": "Changed display name of platform."
           }
         ]
       },
@@ -67,19 +65,6 @@
         },
         {
           "id": [
-            "indices"
-          ],
-          "value": [
-            "CHLORPHYLL"
-          ],
-          "type": "add",
-          "_comment": "Satellite contains extra indice data.",
-          "processes": [
-            "processes.aggregate_indices.AggregateIndices"
-          ]
-        },
-        {
-          "id": [
             "start_date",
             "end_date",
             "baseline_start_date",
@@ -93,11 +78,6 @@
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
           "error_message": "Dates not matching with satellite capabilities"
-        },
-        {
-          "value": "Sentinel-2",
-          "type": "display_text",
-          "_comment": "Changed display name of platform."
         }
       ]
     },
@@ -132,11 +112,6 @@
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
           "error_message": "Dates not matching with satellite capabilities"
-        },
-        {
-          "value": "Landsat-4",
-          "type": "display_text",
-          "_comment": "Changed display name of platform."
         }
       ]
     },
@@ -171,11 +146,6 @@
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
           "error_message": "Dates not matching with satellite capabilities"
-        },
-        {
-          "value": "Landsat-5",
-          "type": "display_text",
-          "_comment": "Changed display name of platform."
         }
       ]
     },
@@ -195,6 +165,21 @@
           "error_message": "The resolution specified does not match the satellites capabilities"
         },
         {
+            "id": [
+              "res"
+            ],
+            "value": [
+              100,
+              330
+            ],
+            "type": "int_range",
+            "processes": [
+                "processes.aggregate_indices.AggregateIndices"
+            ],
+            "_comment": "Satellite capable of set resolution range",
+            "error_message": "The resolution specified does not match the satellites capabilities"
+          },
+        {
           "id": [
             "start_date",
             "end_date",
@@ -210,11 +195,6 @@
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
           "error_message": "Dates not matching with satellite capabilities"
-        },
-        {
-          "value": "Landsat-7",
-          "type": "display_text",
-          "_comment": "Changed display name of platform."
         }
       ]
     },
@@ -248,11 +228,6 @@
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
           "error_message": "Dates not matching with satellite capabilities"
-        },
-        {
-          "value": "Landsat-8",
-          "type": "display_text",
-          "_comment": "Changed display name of platform."
         }
       ]
     }
