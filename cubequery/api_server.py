@@ -168,6 +168,8 @@ def create_task():
     logging.info(f"parms: {params}")
     # work out the args mapping
     args = {'user': user_id}
+    
+    thing.add_values(payload['args'].items())
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
         if valid:

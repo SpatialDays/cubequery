@@ -80,8 +80,11 @@ class CubeQueryTask(JobtasticTask):
                 logging.warning(f"Not found a parameter entry for {k}")
                 result[k] = v
         return result
+    
+    def add_values(self, args):
+        logging.info(f'ARGS: {args}')
 
-    def validate_arg(self, name, value):
+    def validate_arg(self, name, value):        
         search = [p for p in self.parameters if p.name == name]
         if len(search) == 0:
             return False, f"parameter {name} not found"
@@ -89,6 +92,17 @@ class CubeQueryTask(JobtasticTask):
         param = search[0]
         if not validate_d_type(param, value):
             return False, f"parameter {name} value did not validate"
+
+        # Where does valid values get the additional parameters which are process specific?
+        valid_values = [p.valid for p in self.parameters if p.name == name and len(p.valid) > 0]
+        
+        if len(valid_values) > 0 and param.d_type==DType.STRING:
+            try:
+                if not [v for v in valid_values[0] if value in v.values()]:
+                    return False, f"value {value} not found in valid values"
+            except Exception as e:
+                return False, f'{e} ::: {valid_values}'
+
         return True, ""
 
     def validate_args(self, args):
@@ -99,7 +113,6 @@ class CubeQueryTask(JobtasticTask):
         
         """
         
-        #args = {'user': 'test_user', 'aoi': 'POLYGON((176.77849394078876 -17.133616242815744,179.34929472203808 -17.133616242815744,179.34929472203808 -19.2729492234721,176.77849394078876 -19.2729492234721,176.77849394078876 -17.133616242815744))', 'output_projection': 'EPSG:3460', 'start_date': '1900-03-01', 'end_date': '1902-03-08', 'platform': 'SENTINEL_2', 'res': '7090', 'bands': ['Coastal Aerosol', 'Blue', 'Green', 'Red', 'Near Infrared', 'SWIR 1', 'SWIR 2', 'Panchromatic', 'Cirrus', 'Thermal Infrared 1', 'Thermal Infrared 2'], 'aoi_crs': 'EPSG:4326', 'mosaic_type': 'min', 'indices': 'EVI'}
         #_settings_json = url_for('fetch_form_settings')
         
         _settings_json = None
