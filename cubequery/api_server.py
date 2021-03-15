@@ -176,12 +176,14 @@ def create_task():
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
 
-    validation = thing.validate_args(args)
-    if validation != []:
-        logging.warning(f"invalid request: {validation}")
-        error = jsonify(validation)
-        error.status_code = 400
-        return error
+
+    if hasattr(thing, 'validate_args'):
+        validation = thing.validate_args(args)
+        if validation != []:
+            logging.warning(f"invalid request: {validation}")
+            error = jsonify(validation)
+            error.status_code = 400
+            return error
 
     param_block = json.dumps(args)
 

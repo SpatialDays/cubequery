@@ -1,19 +1,4 @@
 {
-  "output_projection": [
-    {
-      "name": "EPSG:3460",
-      "conditions": [
-        {
-          "value": "ESPG:9999",
-          "type": "display_text",
-          "_comment": "Changed display name of platform.",
-          "processes": [
-            "processes.aggregate_indices.AggregateIndices"
-          ]
-        }
-      ]
-    }
-  ],
   "platform": [
     {
         "name": "SENTINEL_1",

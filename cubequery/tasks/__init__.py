@@ -80,9 +80,6 @@ class CubeQueryTask(JobtasticTask):
                 logging.warning(f"Not found a parameter entry for {k}")
                 result[k] = v
         return result
-    
-    def add_values(self, args):
-        logging.info(f'ARGS: {args}')
 
     def validate_arg(self, name, value):        
         search = [p for p in self.parameters if p.name == name]

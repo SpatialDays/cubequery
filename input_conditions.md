@@ -33,7 +33,7 @@ When validating the arguments passed in from the back-end, all unexpected values
 
 ## Processes
 If an array of processes are given, the conditions will only apply to those processes listed. 
-* 
+* If no processes are given, then all of them are applied
 
 ## Example
 
@@ -65,7 +65,10 @@ The JSON file is structured in such a way that it is readable by the Python back
             "CHLORPHYLL"
           ],
           "type": "add", <!-- Type -->
-          "_comment": "Satellite contains extra indice data."
+          "_comment": "Satellite contains extra indice data.",
+          "processes": [ <!-- Specific to this process -->
+                "processes.aggregate_indices.AggregateIndices"
+            ]
         },
         {
           "id": [
