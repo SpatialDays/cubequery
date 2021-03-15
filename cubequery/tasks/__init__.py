@@ -81,9 +81,8 @@ class CubeQueryTask(JobtasticTask):
                 result[k] = v
         return result
 
-    def validate_arg(self, name, value):        
+    def validate_arg(self, name, value):
         search = [p for p in self.parameters if p.name == name]
-        
         if len(search) == 0:
             return False, f"parameter {name} not found"
 
@@ -197,6 +196,7 @@ def login_to_publisher():
     except HTTPError as e:
         logging.error(f"could not log into publish server {e}")
         raise e
+
 
 def validate_d_type(param, value):
     if param.d_type == DType.INT:
