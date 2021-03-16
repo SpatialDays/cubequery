@@ -7,8 +7,6 @@ from os import path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from flask import url_for
-
 import datacube
 from jobtastic import JobtasticTask
 from shapely import wkt

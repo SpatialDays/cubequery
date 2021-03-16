@@ -2,6 +2,7 @@ import logging
 import json
 from shapely import wkt
 from shapely.geometry import shape, GeometryCollection
+from cubequery import fetch_form_settings
 
 def standard_validation(args):
     """
@@ -11,9 +12,7 @@ def standard_validation(args):
     
     """
     
-    #_settings_json = url_for('fetch_form_settings')
-    
-    _settings_json = None
+    _settings_json = fetch_form_settings()  
     
     if not _settings_json:          
         with open('input_conditions.json') as res_json: 

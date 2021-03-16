@@ -10,7 +10,7 @@ from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import get_config, users
+from cubequery import get_config, users, fetch_form_settings
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 
@@ -50,16 +50,12 @@ celery_app.conf.update(
 packages = [m['name'].replace("/", ".") for m in list_processes()]
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
-settings_jsoned = ""
-with app.app_context():
-    with open('input_conditions.json') as res_json:
-        settings_jsoned = jsonify(json.load(res_json))  
         
 @app.route('/')
 def index():
     return render_template("index.html")
 
-
+# TODO: Move Fetch Form Settings
 @app.route('/describe', methods=['GET'])
 def describe():
     """
@@ -73,13 +69,15 @@ def describe():
     If the type is "int", "date" or "float" and there are more than two entries then it is a complete list of possible
         values.
 
-    :return: a JSON encodes list of task description objects.
+    :return: a JSON encoded list of task description objects.
     """
     validate_app_key()
 
     result = list_processes()
+    
+    dynamic_settings = fetch_form_settings()
 
-    return jsonify(result)
+    return jsonify({'result':result, 'settings':dynamic_settings})
 
 
 @app.route('/task/<task_id>', methods=['GET'])
@@ -178,12 +176,12 @@ def create_task():
 
 
     if hasattr(thing, 'validate_args'):
-        validation = thing.validate_args(args)
-        if validation != []:
-            logging.warning(f"invalid request: {validation}")
-            error = jsonify(validation)
-            error.status_code = 400
-            return error
+        errors = thing.validate_args(args)
+        if errors != []:
+            logging.warning(f"invalid request: {errors}")
+            error_message = jsonify(errors)
+            error_message.status_code = 400
+            return error_message
 
     param_block = json.dumps(args)
 
@@ -250,16 +248,6 @@ def validate_app_key():
             abort(403, "Invalid token")
     abort(403, "No token")
 
-# Fetches Settings JSON
-@app.route('/fetch_form_settings', methods=['GET', 'POST'])
-def fetch_form_settings():
-    validate_app_key()
-    
-    global settings_jsoned
-    if settings_jsoned == "":
-        with open('input_conditions.json') as res_json:
-            settings_jsoned = jsonify(json.load(res_json))
-    return settings_jsoned
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))
