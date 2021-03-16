@@ -49,12 +49,12 @@ celery_app.conf.update(
 packages = [m['name'].replace("/", ".") for m in list_processes()]
 celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
-        
+
 @app.route('/')
 def index():
     return render_template("index.html")
 
-# TODO: Move Fetch Form Settings
+
 @app.route('/describe', methods=['GET'])
 def describe():
     """
