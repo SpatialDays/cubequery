@@ -13,7 +13,6 @@ from jobtastic.cache import WrappedCache
 from cubequery import get_config, users, fetch_form_settings
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
-
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
 
@@ -173,16 +172,20 @@ def create_task():
         else:
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
-
-
+    
+    errors = thing.standard_validation(args)
+    
     if hasattr(thing, 'validate_args'):
-        errors = thing.validate_args(args)
-        if errors != []:
-            logging.warning(f"invalid request: {errors}")
-            error_message = jsonify(errors)
-            error_message.status_code = 400
-            return error_message
+        process_specific_validation = thing.validate_args(args)
+        if process_specific_validation:
+            errors += process_specific_validation
 
+    if errors != []:
+        logging.warning(f"invalid request: {errors}")
+        error_message = jsonify(errors)
+        error_message.status_code = 400
+        return error_message
+        
     param_block = json.dumps(args)
 
     future = thing.delay_or_fail(**{"params": param_block})
