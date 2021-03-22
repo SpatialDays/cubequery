@@ -40,9 +40,6 @@ def fetch_form_settings():
     Gets dynamic form settings loaded from a JSON file
     """
     global settings_json
-    if settings_json == "":
-        with open('input_conditions.json') as res_json:
-            settings_json = json.load(res_json)
     return settings_json
 
 # also configure the console logging just in case

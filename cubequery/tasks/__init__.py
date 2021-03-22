@@ -200,8 +200,9 @@ class CubeQueryTask(JobtasticTask):
         errors = []
         
         # Validates AOI
-        if 'aoi' in args:
-            errors = self.validate_standard_spatial_query(args['aoi'])
+        search = [p.name for p in self.parameters if p.d_type==DType.WKT]
+        for s in search:
+            errors = self.validate_standard_spatial_query(args[s])
         
         # Validates information against input_conditions.json
         for key in keys:
@@ -271,7 +272,7 @@ class CubeQueryTask(JobtasticTask):
             fiji_polygon = GeometryCollection([shape(feature["geometry"]).buffer(0) for feature in features])
         '''
             
-        fiji_polygon = wkt.loads('POLYGON((179.85466581578783 -15.573479020580137,177.13005644078854 -15.573479020580137,177.13005644078854 -19.40771171412428,179.85466581578783 -19.40771171412428,179.85466581578783 -15.573479020580137))')
+        fiji_polygon = wkt.loads(get_config('App', 'bounding_box'))
 
         contains = fiji_polygon.contains(parsed_polygon)
         if contains == False:
