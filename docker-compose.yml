@@ -12,7 +12,9 @@ services:
 #      - ./redisdata:/data
 
   cubequery-worker:
-    build: ./worker.Dockerfile
+    build: 
+      context: .
+      dockerfile: worker.Dockerfile
     image: cubequery_worker:latest
     environment:
       - REDIS_URL=redis://redis-master:6379/
@@ -22,7 +24,9 @@ services:
       - ./outputdata:/data
 
   cubequery-server:
-    build: ./server.Dockerfile
+    build: 
+      context: .
+      dockerfile: server.Dockerfile
     image: cubequery_server:latest
     restart: always
     environment:
@@ -31,5 +35,5 @@ services:
       - APP_RESULT_DIR=/data/
     ports:
       - "5000:5000"
-    - volumes:
+    volumes:
       - ./outputdata:/data

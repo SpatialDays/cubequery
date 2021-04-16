@@ -3,6 +3,7 @@
 import configparser
 import logging
 from os import environ
+import json
 
 __author__ = """Emily Selwood"""
 __email__ = 'emily.selwood@sa.catapult.org.uk'
@@ -13,7 +14,11 @@ import logstash
 _config = configparser.ConfigParser()
 _config.read("config.cfg")
 
+settings_json = ""
 
+with open('input_conditions.json') as res_json:
+    settings_json = json.load(res_json)
+        
 def get_config(section, key):
     """
     Get a configuration value from the environment if it is available if not fall back to the config file.
@@ -30,6 +35,12 @@ def get_config(section, key):
 
     return _config.get(section, key)
 
+def fetch_form_settings():
+    """
+    Gets dynamic form settings loaded from a JSON file
+    """
+    global settings_json
+    return settings_json
 
 # also configure the console logging just in case
 console = logging.StreamHandler()

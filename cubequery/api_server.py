@@ -10,9 +10,8 @@ from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import get_config, users
+from cubequery import get_config, users, fetch_form_settings
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
-
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -29,9 +28,10 @@ template_dir = os.path.abspath('./webroot/templates')
 static_dir = os.path.abspath('./webroot/static')
 
 app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
+app.url_map.strict_slashes = False
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
+cors = CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
@@ -68,13 +68,15 @@ def describe():
     If the type is "int", "date" or "float" and there are more than two entries then it is a complete list of possible
         values.
 
-    :return: a JSON encodes list of task description objects.
+    :return: a JSON encoded list of task description objects.
     """
     validate_app_key()
 
     result = list_processes()
+    
+    dynamic_settings = fetch_form_settings()
 
-    return jsonify(result)
+    return jsonify({'result':result, 'settings':dynamic_settings})
 
 
 @app.route('/task/<task_id>', methods=['GET'])
@@ -162,6 +164,7 @@ def create_task():
     logging.info(f"parms: {[p.name for p in thing.parameters]}")
     # work out the args mapping
     args = {'user': user_id}
+
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
         if valid:
@@ -169,7 +172,20 @@ def create_task():
         else:
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
+    
+    errors = thing.standard_validation(args)
+    
+    if hasattr(thing, 'validate_args'):
+        process_specific_validation = thing.validate_args(args)
+        if process_specific_validation:
+            errors += process_specific_validation
 
+    if errors != []:
+        logging.warning(f"invalid request: {errors}")
+        error_message = jsonify(errors)
+        error_message.status_code = 400
+        return error_message
+        
     param_block = json.dumps(args)
 
     future = thing.delay_or_fail(**{"params": param_block})

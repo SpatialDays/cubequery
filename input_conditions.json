@@ -1,0 +1,220 @@
+{
+  "platform": [
+    {
+        "name": "SENTINEL_1",
+        "conditions": [
+          {
+            "id": [
+              "res"
+            ],
+            "value": [
+              20,
+              500
+            ],
+            "type": "int_range",
+            "_comment": "Satellite capable of set resolution range",
+            "error_message": "The resolution specified does not match the satellites capabilities"
+          },
+          {
+            "id": [
+              "start_date",
+              "end_date",
+              "baseline_start_date",
+              "baseline_end_date",
+              "analysis_start_date",
+              "analysis_end_date"
+            ],
+            "value": [
+              "2014-01-01"
+            ],
+            "type": "date_range",
+            "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+            "error_message": "Dates not matching with satellite capabilities"
+          }
+        ]
+      },
+    {
+      "name": "SENTINEL_2",
+      "conditions": [
+        {
+          "id": [
+            "res"
+          ],
+          "value": [
+            10,
+            500
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
+        },
+        {
+          "id": [
+            "start_date",
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
+          ],
+          "value": [
+            "2015-01-01"
+          ],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
+        }
+      ]
+    },
+    {
+      "name": "LANDSAT_4",
+      "conditions": [
+        {
+          "id": [
+            "res"
+          ],
+          "value": [
+            30,
+            500
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
+        },
+        {
+          "id": [
+            "start_date",
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
+          ],
+          "value": [
+            "1990-01-01",
+            "1992-01-01"
+          ],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
+        }
+      ]
+    },
+    {
+      "name": "LANDSAT_5",
+      "conditions": [
+        {
+          "id": [
+            "res"
+          ],
+          "value": [
+            30,
+            500
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
+        },
+        {
+          "id": [
+            "start_date",
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
+          ],
+          "value": [
+            "1990-01-01",
+            "1995-01-01"
+          ],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
+        }
+      ]
+    },
+    {
+      "name": "LANDSAT_7",
+      "conditions": [
+        {
+          "id": [
+            "res"
+          ],
+          "value": [
+            30,
+            500
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
+        },
+        {
+            "id": [
+              "res"
+            ],
+            "value": [
+              100,
+              330
+            ],
+            "type": "int_range",
+            "processes": [
+                "processes.aggregate_indices.AggregateIndices"
+            ],
+            "_comment": "Satellite capable of set resolution range",
+            "error_message": "The resolution specified does not match the satellites capabilities"
+          },
+        {
+          "id": [
+            "start_date",
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
+          ],
+          "value": [
+            "1999-01-01",
+            "2013-01-01"
+          ],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
+        }
+      ]
+    },
+    {
+      "name": "LANDSAT_8",
+      "conditions": [
+        {
+          "id": [
+            "res"
+          ],
+          "value": [
+            30,
+            500
+          ],
+          "type": "int_range",
+          "_comment": "Satellite capable of set resolution range",
+          "error_message": "The resolution specified does not match the satellites capabilities"
+        },
+        {
+          "id": [
+            "start_date",
+            "end_date",
+            "baseline_start_date",
+            "baseline_end_date",
+            "analysis_start_date",
+            "analysis_end_date"
+          ],
+          "value": [
+            "2013-01-01"
+          ],
+          "type": "date_range",
+          "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
+          "error_message": "Dates not matching with satellite capabilities"
+        }
+      ]
+    }
+  ]
+}
