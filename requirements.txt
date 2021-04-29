@@ -14,10 +14,22 @@ bcrypt~=3.1.7
 
 
 setuptools~=40.8.0
-boto3~=1.12.19
+boto3~=1.17.39
 pip~=19.0.3
-six~=1.14.0
+six~=1.15.0
 
 nbformat>=4.4
 yapf>=0.30.0
 GitPython
+
+markdown
+lxml
+
+libcatapult~=0.1.0
+colorama~=0.3.7
+wheel~=0.33.6
+cryptography~=2.1.4
+toml~=0.10.1
+pkginfo~=1.5.0.1
+future~=0.18.2
+docutils~=0.15.2

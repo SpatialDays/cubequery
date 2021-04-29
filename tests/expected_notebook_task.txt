@@ -1,234 +1,199 @@
-import logging
-from types import MethodType
-
-import nbformat
-import os
 
 from cubequery.tasks import Parameter, CubeQueryTask, DType
 
 
-def _line_comment_type(code):
-    # make sure we skip blank lines at the start.
-    i = 0
-    while i < len(code) and code[i].strip() == "":
-        i = i + 1
+class example_notebook_Task(CubeQueryTask):
 
-    if i == len(code):
-        return None
+    description = """<img src=\"http://example.com/test.jpg\"/>
+[More info](http://example.com/more_info.html)
+Notebook for calculation of Total Suspended Matter(TSM) in water bodies. Uses inputs of Landsat-4, Landsat-5, Landsat-7, Landsat-8 and Sentinel-2.
 
-    line = code[i]
-    working = line.strip()
-    if len(working) > 1 and working[0] == '#':
-        comment = (working[1:]).strip()
-        if comment[0:11] == "jupyteronly":
-            return "jupyteronly"
-        if comment[0:10] == "parameters":
-            return "parameters"
-    return None
+TSM stands for \"Total Suspended Matter\" - also called TSS which stands for \"Total Suspended Solids\". It is the dry-weight of particles suspended (not dissolved) in a body of water. It is a proxy of water quality.
 
+This notebook is based from work by ceos-seo at the following link,
+https://github.com/ceos-seo/data_cube_notebooks/blob/master/TSM_Demo_Notebook.ipynb, where the TSM equation originates from.
 
-def _is_line_parameter(line):
-    stripped = line.strip()
-    if stripped[:1] == "#":
-        return stripped[1:].strip()[:9] == "parameter"
-    return False
+Academic papers include Lymburner, L., Botha, E., Hestir, E., Anstee, J., Sagar, S., Dekker, A. and Malthus, T., 2016. Landsat 8: providing continuity and increased precision for measuring multi-decadal time series of total suspended matter. Remote Sensing of Environment, 185, pp.108-118.
 
+This paper demonstrates continuity between the Landsat sensors for TSM assessment. Calibration for S2 use has not been carried out.
 
-def _extract_value_string(line, start):
-    end_mark = " "
-    start_offset = 0
-    end_offset = 0
-    while line[start] == " ":
-        start = start + 1
+"""
+    display_name = " Water Quality Notebook"
+    img_url = "http://example.com/test.jpg"
+    info_url = "http://example.com/more_info.html"
+    path = "/mnt/c/git/cubequery/example_notebook.ipynb"
 
-    if line[start] == "\"":
-        end_mark = "\""
-        start_offset = 1
-        end_offset = 0
-    elif line[start] == "[":
-        end_mark = "]"
-        start_offset = 0
-        end_offset = 1
-
-    end_index = line.index(end_mark, start + 1)
-    return line[start + start_offset: end_index + end_offset]
+    # this will be the parameter block
+    parameters = [
+        Parameter("baseline_start_date", "baseline start date", DType.STRING, ""),
+        Parameter("baseline_end_date", "baseline end date", DType.STRING, ""),
+        Parameter("res", "resolution", DType.STRING, ""),
+        Parameter("platform", "satellite", DType.STRING, "")
+    ]
 
 
-def _process_parameter_comment(line):
-    # we don't know the order that the parameters are going to appear.
-    # to make things nicer to use we can work this out
-    # #paramter display_name="satellite" description="Satellite to use." datatype="string" options=["SENTINEL_2", "LANDSAT_4", "LANDSAT_5", "LANDSAT_7", "LANDSAT_8"],
-    parameters = line.strip()[1:].strip()[10:]
-    display_name = ""
-    description = ""
-    data_type = DType.STRING
-    valid_values = None
-    done = False
-    i = 0
-    while not done:
+    CubeQueryTask.cal_significant_kwargs(parameters)
 
-        try:
-            param_equals_index = parameters.index("=", i)
-        except ValueError:
-            break
-        param_name = parameters[i:param_equals_index]
-        param_value = _extract_value_string(line, param_equals_index)
-        if param_name == "display_name":
-            display_name = param_value
-        if param_name == "description":
-            description = param_value
-        if param_name == "data_type":
-            data_type = DType[param_value]
-        if param_name == "options":
-            # decode valid values... we just exec this.
-            # We pretty much have to trust this code as its going to be called later any way
-            valid_values = exec(param_value)
-
-        # look for the next space after the length of the param_value
-        i = i + len(param_value)
-        while parameters[i] != " ":
-            i = i + 1
-            if i == len(parameters):
-                done = True
-                break
-
-    return Parameter(
-        name="",
-        display_name=display_name,
-        d_type=data_type,
-        description=description,
-        valid=valid_values
-    )
-
-
-def _process_parameter_name(parameter, line):
-    stripped = line.strip()
-    split = stripped.index("=")
-    parameter.name = stripped[:split].strip()
-    return parameter
-
-
-def _create_filename(script_path):
-    return os.path.splitext(os.path.basename(script_path))[0]
-
-
-def process_notebook(script_path, target_path):
-    """
-    Create a new copy of this python file replacing the script location pointer and name
-    :param target_path: location where the output script should be created.
-    :param script_path: the script this task should point at.
-    :return:
-    """
-    this_script = os.path.abspath(__file__)
-    filename = _create_filename(script_path)
-    out_file_path = os.path.join(target_path, f"{filename}.py")
-
-    this_file = open(this_script, "r")
-    target_file = open(out_file_path, "w")
-
-    while True:
-        line = this_file.readline()
-        if not line:
-            break
-        line = line.replace("class example_notebookTask(", f"class {filename}Task(")
-        line = line.replace("path = \"example_notebook.ipynd\"", f"path = \"{script_path}\"")
-        target_file.write(line)
-
-    this_file.close()
-    target_file.close()
-
-
-class example_notebookTask(CubeQueryTask):
-
-    def __init__(self):
-        path = "/mnt/c/git/cubequery/tests/example_notebook.ipynb"
-        try:
-            logging.debug(f"starting to create task from notebook {path}")
-            notebook = nbformat.read(path, as_version=4)
-        except:
-            logging.debug("could not open notebool")
-            return
-
-        set_header = False
-        self.function_code = ""
-        for cell in notebook.cells:
-            if not set_header and cell.cell_type == "markdown":
-                # parse out the markdown and try and grab the name as the heading and the description as the rest
-                self._process_markdown_description(cell.source)
-                set_header = True
-
-            if cell.cell_type == "code":
-                # process the code blocks.
-                self._process_code(cell.source)
-                pass
-
-
-        self._convert_to_function()
-
-    def _process_markdown_description(self, markdown):
-        description = ""
-        for line in markdown:
-            if not self.display_name and line.startswith("#"):
-                # this is the header of the first markdown thing so we can use this as the display_name
-                self.display_name = line[1:]
-                logging.debug(f"setting display_name to {self.display_name}")
+    def NoteBook_Task_Generate_Product(self, baseline_start_date, baseline_end_date, res, platform):
+        from pyproj import Proj, transform
+        from datacube.storage import masking
+        from datacube_utilities.createAOI import create_lat_lon
+        from datacube_utilities.interactive_maps import display_map
+        from datacube_utilities.dc_utilities import write_geotiff_from_xr
+        from datacube_utilities.dc_water_quality import tsm
+        from datacube_utilities.dc_water_classifier import wofs_classify
+        import numpy as np
+        import xarray as xr
+        import dask
+        from dask.distributed import Client
+        client = Client('dask-scheduler.dask.svc.cluster.local:8786')
+        client.get_versions(check=True)
+        client
+        #time_range
+        #format dates
+        from datetime import datetime
+        def createDate(inputStart, inputEnd):
+            start = datetime.strptime(inputStart, '%Y-%m-%d')
+            end = datetime.strptime(inputEnd, '%Y-%m-%d')
+            startDates = start.date()
+            endDates = end.date()
+            time_period = (startDates, endDates)
+            return time_period
+        baseline_time_period = createDate(baseline_start_date, baseline_end_date)
+        #create resolution
+        resolution = (-res, res)
+        dask_chunks = dict(
+            time = 10,
+            x = 600,
+            y = 600
+        )
+        # format area
+        lat_extents, lon_extents = create_lat_lon(aoi_wkt)
+        # crs's for input parameters
+        inProj  = Proj("+init=EPSG:4326")
+        #this is hard coded can it be related to crs variable above.
+        outProj = Proj("+init=EPSG:3460")
+        min_lat, max_lat = (lat_extents)
+        min_lon, max_lon = (lon_extents)
+        x_A, y_A = transform(inProj, outProj, min_lon, min_lat)
+        x_B, y_B = transform(inProj, outProj, max_lon, max_lat)
+        lat_range = (y_A, y_B)
+        lon_range = (x_A, x_B)
+        allmeasurements = ["green","red","blue","nir","swir1","swir2"]
+        water_measurements = ["water_classification"]
+        def create_product_measurement(platform):
+            if platform  in ["SENTINEL_2"]:
+                product = 's2_esa_sr_granule'
+                measurements = allmeasurements + ["coastal_aerosol","scene_classification"]
+                ###CHANGE WHEN S2 WOFS READY
+                water_product = 'SENTINEL_2_PRODUCT DEFS'
+            elif platform in ["LANDSAT_8"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls8_usgs_sr_scene'
+                water_product = 'ls8_water_classification'
+            elif platform in ["LANDSAT_7"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls7_usgs_sr_scene'
+                water_product = 'ls7_water_classification'
+            elif platform in ["LANDSAT_5"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls5_usgs_sr_scene'
+                water_product = 'ls5_water_classification'
+            elif platform in ["LANDSAT_4"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls4_usgs_sr_scene'
+                water_product = 'ls4_water_classification'
             else:
-                description += line
-
-        self.description = description
-
-    def _process_code(self, code):
-        if code:
-            # parse the code out.
-            block_type = _line_comment_type(code)
-            if block_type == "jupyteronly":
-                # we don't need this code so we can skip it
-                return
-            if block_type == "parameters":
-                # process parameters block
-                return self._process_parameters(code)
-
-            self._append_all_code(code)
-
-    def _append_all_code(self, code, indent=1):
-        for line in code:
-            self.function_code += ("\t" * indent) + line + "\n"
-
-    def _process_parameters(self, code):
-        # loop over the lines
-        # do this with a while loop as we sometimes need two lines at once
-        i = 0
-        while i < len(code):
-            line = code[i]
-            if _is_line_parameter(line):
-                # TODO: should we handle blank lines here?
-                self._process_parameter(line, code[i + 1])
-                i = i + 1
-            i = i + 1
-
-    def _process_parameter(self, line_a, line_b):
-        p = _process_parameter_comment(line_a)
-        p = _process_parameter_name(p, line_b)
-
-        if not self.parameters:
-            self.parameters = []
-        self.parameters.append(p)
-
-    def _generate_function_parameters(self):
-        result = "self"
-        for p in self.parameters:
-            result += ", " + p.name
-        return result
-
-    def _convert_to_function(self):
-
-        # make sure that the code returns something.
-
-        # we've now got to the end of all the code so we can finalise things and actually make our function
-        # wrap function in header and return value
-        function_text = "def generate_product(" + self._generate_function_parameters() + "):\n"
-        function_text = function_text + self.function_code
-
-        # now to create the function and add it to the class
-        function = exec(function_text)
-        self.generate_product = MethodType(function, self)
+                print("invalid platform")
+            return product, measurements, water_product
+        product, measurement, water_product = create_product_measurement(platform)
+        query = {
+            'longitude': lon_range,
+            'latitude': lat_range,
+            'output_crs': output_projection,
+            'resolution': resolution,
+            'time': baseline_time_period,
+            'dask_chunks': dask_chunks,
+            'crs': crs
+        }
+        ds = dc.load(
+            platform = platform,
+            product = product,
+            measurements = measurement,
+            **query
+        )
+        ds
+        def is_dataset_empty(ds:xr.Dataset) -> bool:
+            checks_for_empty = [
+                                lambda x: len(x.dims) == 0,      #Dataset has no dimensions
+                                lambda x: len(x.data_vars) == 0  #Dataset no variables
+                               ]
+            for f in checks_for_empty:
+                 if f(ds) == True:
+                        return True
+            return False
+        if is_dataset_empty(ds): raise Exception("DataCube Load returned an empty Dataset." +
+                                                       "Please check load parameters for Baseline Dataset!")
+        def look_up_clean(platform, ds):
+            if platform  in ["SENTINEL_2"]:
+                good_quality = (
+                    (ds.scene_classification != 0) & # mask out NO_DATA
+                    (ds.scene_classification != 1) & # mask out SATURATED_OR_DEFECTIVE
+                    (ds.scene_classification != 2) & # mask out DARK_AREA_PIXELS
+                    (ds.scene_classification != 3) & # mask out CLOUD_SHADOWS
+                    (ds.scene_classification != 8) & # mask out CLOUD_MEDIUM_PROBABILITY
+                    (ds.scene_classification != 9) & # mask out CLOUD_HIGH_PROBABILITY
+                    (ds.scene_classification != 10)&  # mask out THIN_CIRRUS
+                    (ds.scene_classification != 11)  # mask out SNOW
+                )
+            elif platform in ["LANDSAT_8"]:
+                good_quality = (
+                    (ds.pixel_qa == 322)  | # clear
+                    (ds.pixel_qa == 386)  |
+                    (ds.pixel_qa == 834)  |
+                    (ds.pixel_qa == 898)  |
+                    (ds.pixel_qa == 1346) |
+                    (ds.pixel_qa == 324)  | # water
+                    (ds.pixel_qa == 388)  |
+                    (ds.pixel_qa == 836)  |
+                    (ds.pixel_qa == 900)  |
+                    (ds.pixel_qa == 1348)
+                )
+            elif platform in ["LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
+                good_quality = (
+                    (ds.pixel_qa == 66)  | # clear
+                    (ds.pixel_qa == 130)  |
+                    (ds.pixel_qa == 68)  | # water
+                    (ds.pixel_qa == 132)
+                )
+            else:
+                print("invalid platform")
+            return good_quality
+        good_quality = look_up_clean(platform, ds)
+        ds_clear = ds.where(good_quality)
+        ds_clear
+        #when S2 mask is ready - can remove the if statement.
+        if platform in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
+            water_scenes = dc.load(product=water_product,
+                      measurements = ["water_classification"],
+                       **query)
+            #change clouds to no data value
+            water_classes = water_scenes.where(water_scenes >= 0)
+        elif platform in ["SENTINEL_2"]:
+            water_classes = dask.delayed(wofs_classify)(ds, clean_mask=good_quality.values, no_data = np.nan , x_coord='x', y_coord = "y")
+            water_classes = water_classes.rename({'wofs': 'water_classification'})
+        #set land to no_data
+        water_dataset = water_classes.where(water_classes > 0)
+        water_dataset
+        #mask clear by water mask
+        ds_clear_land = ds_clear.where(water_dataset.water_classification > 0)
+        #create tsm
+        tsm_dataset = xr.map_blocks(tsm, ds_clear_land)
+        mean_tsm = tsm_dataset.mean(dim=['time'])
+        max_tsm = tsm_dataset.max(dim=['time'])
+        min_tsm = tsm_dataset.min(dim=['time'])
+        mean_tsm, max_tsm, min_tsm = dask.compute(mean_tsm, max_tsm, min_tsm)
+        write_geotiff_from_xr('mean_tsm.tiff', mean_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        write_geotiff_from_xr('min_tsm.tiff', min_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        write_geotiff_from_xr('max_tsm.tiff', max_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        return ['mean_tsm.tiff', 'min_tsm.tiff', 'max_tsm.tiff']

@@ -13,7 +13,7 @@ from jobtastic import JobtasticTask
 from shapely import wkt
 
 from cubequery import get_config
-from cubequery.utils.s3_tools import S3Utils
+from libcatapult.storage.s3_tools import S3Utils
 
 _http_headers = {"Content-Type": "application/json", "User-Agent": "cubequery-result"}
 
@@ -145,7 +145,8 @@ class CubeQueryTask(JobtasticTask):
         secret_key = get_config("AWS", "secret_access_key")
         bucket = get_config("AWS", "bucket")
 
-        s3_tools = S3Utils(access_key, secret_key, bucket, get_config("AWS", "s3_endpoint"), get_config("AWS", "region"))
+        s3_tools = S3Utils(access_key, secret_key, bucket, get_config("AWS", "s3_endpoint"),
+                           get_config("AWS", "region"))
 
         s3_tools.put_file(source_file_path, dest_file_path)
 
@@ -180,7 +181,6 @@ class CubeQueryTask(JobtasticTask):
 
 
 def login_to_publisher():
-
     url = f"{get_config('App', 'result_url')}/token"
     login_payload = {
         'name': get_config("App", "result_login_user"),
@@ -264,4 +264,5 @@ def check_float_range(s, param):
         pass
 
     v = float(s)
+
 

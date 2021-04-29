@@ -33,6 +33,8 @@ app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
 cors = CORS(app, origin=get_config("App", "cors_origin"), send_wildcard=True, allow_headers=['Content-Type'])
 
+git_packages.process_repo()
+
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
 
@@ -46,10 +48,9 @@ celery_app.conf.update(
     JOBTASTIC_CACHE=cache,
 )
 
-git_packages.process_repo()
-
 packages = [m['name'].replace("/", ".") for m in list_processes()]
-celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
+if len(packages) > 0:
+    celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
 @app.route('/')
@@ -171,6 +172,11 @@ def create_task():
         else:
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
+
+    if thing.validate_args:
+        result = thing.validate_args(**args)
+        if result:
+            abort(400, result)
 
     param_block = json.dumps(args)
 
