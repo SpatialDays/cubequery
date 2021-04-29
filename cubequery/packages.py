@@ -14,26 +14,21 @@ logger = logging.getLogger("packages")
 
 
 def _task_matcher(name, obj):
-    # logging.debug(f"testing {obj.__name__}")
     # Need a description to pass to the user
     if not hasattr(obj, 'description'):
-        logging.debug("has no description")
         return False
 
     # must have a display name for the user.
     if not hasattr(obj, 'display_name'):
-        logging.debug("has no display_name")
         return False
 
     # Task must have a calculate_result method or it won't be able to do anything.
     if not hasattr(obj, 'calculate_result'):
-        logging.debug("has no calculate_result method")
         return False
 
     # Every task should have parameters...
     # If this turns out to be a problem we can hack around this with a dummy argument.
     if not hasattr(obj, 'parameters'):
-        logging.debug("has no parameters")
         return False
 
     return True

@@ -15,9 +15,7 @@ from lxml import etree
 
 
 def _extract_first_link(description):
-    # logging.info("description: " + description)
     md = markdown.markdown(description)
-    # logging.info("::::"+md+"::::")
     doc = etree.fromstring("<div>" + md + "</div>")
     for link in doc.xpath('//a'):
         return link.get('href')
@@ -147,7 +145,6 @@ def _process_markdown_description(markdown):
                     src_index = line.index("src")
                     equal_start = line.index("=", src_index)
                     img_url = _extract_value_string(line, equal_start)
-                    # TODO: now remove the image tag and add the rest to the description
 
                 description += line.strip()
                 description += "\n"
@@ -188,7 +185,6 @@ def _process_code(function_code, parameters, code):
 
 
 def _append_all_code(function_code, code, indent=2):
-    # print("line: ", code, "end of line")
     for line in code.splitlines():
         if line != "" and line.strip() != "" and line.strip()[0] != "%":
             # line must have trailing spaces removed because pycharm will automatically remove trailing spaces on text
