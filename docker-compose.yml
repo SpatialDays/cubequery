@@ -22,15 +22,15 @@ services:
     volumes:
       - ./redisdata:/data
 
-#  cubequery-worker:
-#    build: ./worker.Dockerfile
-#    image: cubequery_worker:latest
-#    environment:
-#      - REDIS_URL=redis://redis-master:6379/
-#      - APP_RESULT_DIR=/data/
-#    restart: always
-#    volumes:
-#      - ./outputdata:/data
+  cubequery-worker:
+    build: ./worker.Dockerfile
+    image: cubequery_worker:latest
+    environment:
+      - REDIS_URL=redis://redis-master:6379/
+      - APP_RESULT_DIR=/data/
+    restart: always
+    volumes:
+      - ./outputdata:/data
 
   cubequery-server:
     build: 

@@ -50,7 +50,7 @@ celery_app.conf.update(
 )
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
-if len(packages) > 0:
+if len(packages):
     celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
