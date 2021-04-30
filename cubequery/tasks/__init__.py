@@ -316,7 +316,7 @@ def validate_d_type(param, value):
     if param.d_type == DType.INT:
         return check_int(value)
     if param.d_type == DType.FLOAT:
-        return check_float(value)
+        return check_float(param, value)
     if param.d_type == DType.MULTI:
         return True
     if param.d_type == DType.LAT:
@@ -366,17 +366,16 @@ def check_int(s):
     return False
 
 
-def check_float(s):
+def check_float(param, s):
     if isinstance(s, float):
-        return True
+        return check_float_range(param, s)
     try:
-        float(s)
-        return True
+        return check_float_range(param, s)
     except ValueError:
         return False
 
 
-def check_float_range(s, param):
+def check_float_range(param, s):
     if not param.valid:
         return True
 
