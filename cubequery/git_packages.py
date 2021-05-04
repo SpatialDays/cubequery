@@ -360,13 +360,19 @@ def process_repo():
     git_path = get_config("Git", "url")
     repo_dir = get_config("Git", "repo_dir")
     dir_of_interest = get_config("Git", "interesting_dir")
+    branch = get_config("Git", "branch")
     script_dir = get_config("App", "extra_path")
 
     # if we have already cloned the repo make sure its gone.
     if os.path.exists(repo_dir):
         shutil.rmtree(repo_dir)
+
     logging.debug(f"cloneing {git_path} to {repo_dir}")
-    Repo.clone_from(git_path, repo_dir)
+    repo = Repo.clone_from(git_path, repo_dir)
+
+    if branch:
+        logging.debug(f"checking out {branch}")
+        repo.git.checkout(branch)
 
     logging.debug("done clone")
     # TODO: do we need to be able to set the branch here?
