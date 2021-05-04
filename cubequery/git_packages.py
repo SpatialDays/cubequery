@@ -8,7 +8,7 @@ import re
 from git import Repo
 
 from cubequery import get_config
-from cubequery.tasks import DType, Parameter
+from cubequery.tasks import DType, Parameter, map_from_dtype, map_to_dtype
 
 import markdown
 from lxml import etree
@@ -56,7 +56,7 @@ def _process_parameter_comment(line):
 
         try:
             param_equals_index = parameters.index("=", i)
-            param_name = parameters[i:param_equals_index]
+            param_name = parameters[i:param_equals_index].strip()
             param_value = _extract_value_string(parameters, param_equals_index)
         except ValueError:
             break
@@ -64,8 +64,8 @@ def _process_parameter_comment(line):
             display_name = param_value
         if param_name == "description":
             description = param_value
-        if param_name == "data_type":
-            data_type = DType[param_value]
+        if param_name == "datatype" or param_name == "data_type":
+            data_type = map_to_dtype(param_value)
         if param_name == "options":
             # decode valid values... we just exec this.
             # We pretty much have to trust this code as its going to be called later any way
@@ -271,31 +271,9 @@ def _convert_to_parameter_def(parameters):
 def _render_parameter(param):
     logging.info(f"{param.name} : {param.display_name}")
     if len(param.valid) > 1:
-        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {_map_dtype(param.d_type)}, \"{param.description}\", {param.valid})"
+        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\", {param.valid})"
     else:
-        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {_map_dtype(param.d_type)}, \"{param.description}\")"
-
-
-def _map_dtype(input):
-    if input == DType.STRING:
-        return "DType.STRING"
-    if input == DType.INT:
-        return "DType.INT"
-    if input == DType.FLOAT:
-        return "DType.FLOAT"
-    if input == DType.LAT:
-        return "DType.LAT"
-    if input == DType.LON:
-        return "DType.LON"
-    if input == DType.DATE:
-        return "DType.DATE"
-    if input == DType.TIME:
-        return "DType.TIME"
-    if input == DType.WKT:
-        return "DType.WKT"
-    if input == DType.MULTI:
-        return "DType.MULTI"
-    raise IndexError()
+        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\")"
 
 
 def _generate_function_parameters(parameters):

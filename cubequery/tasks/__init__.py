@@ -31,6 +31,51 @@ class DType(EnumMeta):
     MULTI = "multi"
 
 
+def map_to_dtype(input):
+    lower = input.lower()
+    if lower == "string":
+        return DType.STRING
+    if lower == "int":
+        return DType.INT
+    if lower == "float":
+        return DType.FLOAT
+    if lower == "lat":
+        return DType.LAT
+    if lower == "lon":
+        return DType.LON
+    if lower == "date":
+        return DType.DATE
+    if lower == "time":
+        return DType.TIME
+    if lower == "wkt":
+        return DType.WKT
+    if lower == "multi":
+        return DType.MULTI
+
+
+def map_from_dtype(input):
+    if input == DType.STRING:
+        return "DType.STRING"
+    if input == DType.INT:
+        return "DType.INT"
+    if input == DType.FLOAT:
+        return "DType.FLOAT"
+    if input == DType.LAT:
+        return "DType.LAT"
+    if input == DType.LON:
+        return "DType.LON"
+    if input == DType.DATE:
+        return "DType.DATE"
+    if input == DType.TIME:
+        return "DType.TIME"
+    if input == DType.WKT:
+        return "DType.WKT"
+    if input == DType.MULTI:
+        return "DType.MULTI"
+    raise IndexError()
+
+
+
 class Parameter(object):
     def __init__(self, name, display_name, d_type, description, valid=None):
         if valid is None:

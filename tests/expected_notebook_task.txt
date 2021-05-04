@@ -25,10 +25,10 @@ This paper demonstrates continuity between the Landsat sensors for TSM assessmen
 
     # this will be the parameter block
     parameters = [
-        Parameter("baseline_start_date", "baseline start date", DType.STRING, ""),
-        Parameter("baseline_end_date", "baseline end date", DType.STRING, ""),
-        Parameter("res", "resolution", DType.STRING, ""),
-        Parameter("platform", "satellite", DType.STRING, "")
+        Parameter("baseline_start_date", "baseline start date", DType.DATE, "start of the baseline window"),
+        Parameter("baseline_end_date", "baseline end date", DType.DATE, "end of the baseline window"),
+        Parameter("res", "resolution", DType.INT, "size of pixes"),
+        Parameter("platform", "satellite", DType.STRING, "Satellite to use.")
     ]
 
 
