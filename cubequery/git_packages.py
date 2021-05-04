@@ -32,6 +32,10 @@ def _extract_value_string(line, start):
         end_mark = "\""
         start_offset = 1
         end_offset = 0
+    elif line[start] == "'":
+        end_mark = "'"
+        start_offset = 1
+        end_offset = 0
     elif line[start] == "[":
         end_mark = "]"
         start_offset = 0
