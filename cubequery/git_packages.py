@@ -73,8 +73,9 @@ def _process_parameter_comment(line):
         if param_name == "options":
             # decode valid values... we just exec this.
             # We pretty much have to trust this code as its going to be called later any way
-            valid_values = exec(param_value)
-
+            _locals = locals()
+            exec(f"valid_values = {param_value}", globals(), _locals)
+            valid_values = _locals['valid_values']
         # look for the next space after the length of the param_value
         i = i + len(param_name) + len(param_value) + 1
         if i >= len(parameters):
