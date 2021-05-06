@@ -6,6 +6,8 @@ import sys
 
 from importlib.util import spec_from_file_location, module_from_spec
 
+import traceback
+
 from cubequery import get_config
 
 logger = logging.getLogger("packages")
@@ -54,6 +56,8 @@ def _task_info(clazz):
         "display_name": clazz.display_name,
         "description": clazz.description,
         "args": params,
+        "img_url": clazz.img_url,
+        "info_url": clazz.info_url,
     }
 
 
@@ -72,13 +76,18 @@ def is_valid_task(name):
 
 
 def load_module(root, file, package_root):
+
+    if package_root[-1] != os.sep:
+        package_root = package_root + os.sep
+
     full_path = os.path.join(root, file)
-    mod_name = (os.path.join(root, file)[len(package_root):-3]).replace(os.sep, '.')
+
+    mod_name = (full_path[len(package_root):-3]).replace(os.sep, '.')  # three from the end to remove the .py extension
     spec = spec_from_file_location(mod_name, full_path)
     module = module_from_spec(spec)
     spec.loader.exec_module(module)
     sys.modules[mod_name] = module
-    logger.debug(f"checking module {mod_name}")
+    logger.debug(f"checking module {mod_name} fp:{full_path} pr:{package_root}")
     result = []
     for name, obj in inspect.getmembers(module):
         logger.debug(f"> checking {mod_name}.{name}")
@@ -112,7 +121,8 @@ def list_processes():
                         try:
                             result += load_module(root, f, p)
                         except Exception as e:
-                            logger.warning(f"could not load {root}/{f} due to {e} skipping")
+                            logger.warning(f"could not load {root}/{f} due to {e} skipping.")
+                            traceback.print_exc()
 
     if added:
         importlib.invalidate_caches()

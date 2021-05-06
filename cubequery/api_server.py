@@ -10,7 +10,8 @@ from flask_cors import CORS
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
 from jobtastic.cache import WrappedCache
 
-from cubequery import get_config, users, fetch_form_settings
+from cubequery import get_config, users, git_packages, fetch_form_settings
+
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 
 def _to_bool(input):
@@ -33,6 +34,8 @@ app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
 cors = CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
+git_packages.process_repo()
+
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
 
@@ -47,7 +50,8 @@ celery_app.conf.update(
 )
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
-celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
+if len(packages):
+    celery_app.autodiscover_tasks(packages=packages, related_name="", force=True)
 
 
 @app.route('/')
@@ -172,7 +176,7 @@ def create_task():
         else:
             logging.info(f"invalid request. Parameter '{k}' of task '{payload['task']}' failed validation, {msg}")
             abort(400, f"invalid parameter {k}, {msg}")
-    
+
     errors = thing.standard_validation(args)
     
     if hasattr(thing, 'validate_args'):
@@ -186,6 +190,7 @@ def create_task():
         error_message.status_code = 400
         return error_message
         
+
     param_block = json.dumps(args)
 
     future = thing.delay_or_fail(**{"params": param_block})

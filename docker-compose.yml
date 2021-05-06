@@ -8,11 +8,9 @@ services:
       - "6379:6379"
     restart: always
     command: redis-server --appendonly yes
-#    volumes:
-#      - ./redisdata:/data
 
   cubequery-worker:
-    build: 
+    build:
       context: .
       dockerfile: worker.Dockerfile
     image: cubequery_worker:latest
@@ -21,7 +19,7 @@ services:
       - APP_RESULT_DIR=/data/
     restart: always
     volumes:
-      - ./outputdata:/data
+      - ./redisdata:/data
 
   cubequery-server:
     build: 

@@ -1,0 +1,199 @@
+
+from cubequery.tasks import Parameter, CubeQueryTask, DType
+
+
+class example_notebook_Task(CubeQueryTask):
+
+    description = """<img src=\"http://example.com/test.jpg\"/>
+[More info](http://example.com/more_info.html)
+Notebook for calculation of Total Suspended Matter(TSM) in water bodies. Uses inputs of Landsat-4, Landsat-5, Landsat-7, Landsat-8 and Sentinel-2.
+
+TSM stands for \"Total Suspended Matter\" - also called TSS which stands for \"Total Suspended Solids\". It is the dry-weight of particles suspended (not dissolved) in a body of water. It is a proxy of water quality.
+
+This notebook is based from work by ceos-seo at the following link,
+https://github.com/ceos-seo/data_cube_notebooks/blob/master/TSM_Demo_Notebook.ipynb, where the TSM equation originates from.
+
+Academic papers include Lymburner, L., Botha, E., Hestir, E., Anstee, J., Sagar, S., Dekker, A. and Malthus, T., 2016. Landsat 8: providing continuity and increased precision for measuring multi-decadal time series of total suspended matter. Remote Sensing of Environment, 185, pp.108-118.
+
+This paper demonstrates continuity between the Landsat sensors for TSM assessment. Calibration for S2 use has not been carried out.
+
+"""
+    display_name = " Water Quality Notebook"
+    img_url = "http://example.com/test.jpg"
+    info_url = "http://example.com/more_info.html"
+    path = "/mnt/c/git/cubequery/example_notebook.ipynb"
+
+    # this will be the parameter block
+    parameters = [
+        Parameter("baseline_start_date", "baseline start date", DType.DATE, "start of the baseline window"),
+        Parameter("baseline_end_date", "baseline end date", DType.DATE, "end of the baseline window"),
+        Parameter("res", "resolution", DType.INT, "size of pixes"),
+        Parameter("platform", "satellite", DType.STRING, "Satellite to use.", ['SENTINEL_2', 'LANDSAT_4', 'LANDSAT_5', 'LANDSAT_7', 'LANDSAT_8'])
+    ]
+
+
+    CubeQueryTask.cal_significant_kwargs(parameters)
+
+    def NoteBook_Task_Generate_Product(self, baseline_start_date, baseline_end_date, res, platform):
+        from pyproj import Proj, transform
+        from datacube.storage import masking
+        from datacube_utilities.createAOI import create_lat_lon
+        from datacube_utilities.interactive_maps import display_map
+        from datacube_utilities.dc_utilities import write_geotiff_from_xr
+        from datacube_utilities.dc_water_quality import tsm
+        from datacube_utilities.dc_water_classifier import wofs_classify
+        import numpy as np
+        import xarray as xr
+        import dask
+        from dask.distributed import Client
+        client = Client('dask-scheduler.dask.svc.cluster.local:8786')
+        client.get_versions(check=True)
+        client
+        #time_range
+        #format dates
+        from datetime import datetime
+        def createDate(inputStart, inputEnd):
+            start = datetime.strptime(inputStart, '%Y-%m-%d')
+            end = datetime.strptime(inputEnd, '%Y-%m-%d')
+            startDates = start.date()
+            endDates = end.date()
+            time_period = (startDates, endDates)
+            return time_period
+        baseline_time_period = createDate(baseline_start_date, baseline_end_date)
+        #create resolution
+        resolution = (-res, res)
+        dask_chunks = dict(
+            time = 10,
+            x = 600,
+            y = 600
+        )
+        # format area
+        lat_extents, lon_extents = create_lat_lon(aoi_wkt)
+        # crs's for input parameters
+        inProj  = Proj("+init=EPSG:4326")
+        #this is hard coded can it be related to crs variable above.
+        outProj = Proj("+init=EPSG:3460")
+        min_lat, max_lat = (lat_extents)
+        min_lon, max_lon = (lon_extents)
+        x_A, y_A = transform(inProj, outProj, min_lon, min_lat)
+        x_B, y_B = transform(inProj, outProj, max_lon, max_lat)
+        lat_range = (y_A, y_B)
+        lon_range = (x_A, x_B)
+        allmeasurements = ["green","red","blue","nir","swir1","swir2"]
+        water_measurements = ["water_classification"]
+        def create_product_measurement(platform):
+            if platform  in ["SENTINEL_2"]:
+                product = 's2_esa_sr_granule'
+                measurements = allmeasurements + ["coastal_aerosol","scene_classification"]
+                ###CHANGE WHEN S2 WOFS READY
+                water_product = 'SENTINEL_2_PRODUCT DEFS'
+            elif platform in ["LANDSAT_8"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls8_usgs_sr_scene'
+                water_product = 'ls8_water_classification'
+            elif platform in ["LANDSAT_7"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls7_usgs_sr_scene'
+                water_product = 'ls7_water_classification'
+            elif platform in ["LANDSAT_5"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls5_usgs_sr_scene'
+                water_product = 'ls5_water_classification'
+            elif platform in ["LANDSAT_4"]:
+                measurements = allmeasurements + ["pixel_qa"]
+                product = 'ls4_usgs_sr_scene'
+                water_product = 'ls4_water_classification'
+            else:
+                print("invalid platform")
+            return product, measurements, water_product
+        product, measurement, water_product = create_product_measurement(platform)
+        query = {
+            'longitude': lon_range,
+            'latitude': lat_range,
+            'output_crs': output_projection,
+            'resolution': resolution,
+            'time': baseline_time_period,
+            'dask_chunks': dask_chunks,
+            'crs': crs
+        }
+        ds = dc.load(
+            platform = platform,
+            product = product,
+            measurements = measurement,
+            **query
+        )
+        ds
+        def is_dataset_empty(ds:xr.Dataset) -> bool:
+            checks_for_empty = [
+                                lambda x: len(x.dims) == 0,      #Dataset has no dimensions
+                                lambda x: len(x.data_vars) == 0  #Dataset no variables
+                               ]
+            for f in checks_for_empty:
+                 if f(ds) == True:
+                        return True
+            return False
+        if is_dataset_empty(ds): raise Exception("DataCube Load returned an empty Dataset." +
+                                                       "Please check load parameters for Baseline Dataset!")
+        def look_up_clean(platform, ds):
+            if platform  in ["SENTINEL_2"]:
+                good_quality = (
+                    (ds.scene_classification != 0) & # mask out NO_DATA
+                    (ds.scene_classification != 1) & # mask out SATURATED_OR_DEFECTIVE
+                    (ds.scene_classification != 2) & # mask out DARK_AREA_PIXELS
+                    (ds.scene_classification != 3) & # mask out CLOUD_SHADOWS
+                    (ds.scene_classification != 8) & # mask out CLOUD_MEDIUM_PROBABILITY
+                    (ds.scene_classification != 9) & # mask out CLOUD_HIGH_PROBABILITY
+                    (ds.scene_classification != 10)&  # mask out THIN_CIRRUS
+                    (ds.scene_classification != 11)  # mask out SNOW
+                )
+            elif platform in ["LANDSAT_8"]:
+                good_quality = (
+                    (ds.pixel_qa == 322)  | # clear
+                    (ds.pixel_qa == 386)  |
+                    (ds.pixel_qa == 834)  |
+                    (ds.pixel_qa == 898)  |
+                    (ds.pixel_qa == 1346) |
+                    (ds.pixel_qa == 324)  | # water
+                    (ds.pixel_qa == 388)  |
+                    (ds.pixel_qa == 836)  |
+                    (ds.pixel_qa == 900)  |
+                    (ds.pixel_qa == 1348)
+                )
+            elif platform in ["LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
+                good_quality = (
+                    (ds.pixel_qa == 66)  | # clear
+                    (ds.pixel_qa == 130)  |
+                    (ds.pixel_qa == 68)  | # water
+                    (ds.pixel_qa == 132)
+                )
+            else:
+                print("invalid platform")
+            return good_quality
+        good_quality = look_up_clean(platform, ds)
+        ds_clear = ds.where(good_quality)
+        ds_clear
+        #when S2 mask is ready - can remove the if statement.
+        if platform in ["LANDSAT_8", "LANDSAT_7", "LANDSAT_5", "LANDSAT_4"]:
+            water_scenes = dc.load(product=water_product,
+                      measurements = ["water_classification"],
+                       **query)
+            #change clouds to no data value
+            water_classes = water_scenes.where(water_scenes >= 0)
+        elif platform in ["SENTINEL_2"]:
+            water_classes = dask.delayed(wofs_classify)(ds, clean_mask=good_quality.values, no_data = np.nan , x_coord='x', y_coord = "y")
+            water_classes = water_classes.rename({'wofs': 'water_classification'})
+        #set land to no_data
+        water_dataset = water_classes.where(water_classes > 0)
+        water_dataset
+        #mask clear by water mask
+        ds_clear_land = ds_clear.where(water_dataset.water_classification > 0)
+        #create tsm
+        tsm_dataset = xr.map_blocks(tsm, ds_clear_land)
+        mean_tsm = tsm_dataset.mean(dim=['time'])
+        max_tsm = tsm_dataset.max(dim=['time'])
+        min_tsm = tsm_dataset.min(dim=['time'])
+        mean_tsm, max_tsm, min_tsm = dask.compute(mean_tsm, max_tsm, min_tsm)
+        write_geotiff_from_xr('mean_tsm.tiff', mean_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        write_geotiff_from_xr('min_tsm.tiff', min_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        write_geotiff_from_xr('max_tsm.tiff', max_tsm, crs=output_projection, x_coord = 'x', y_coord = 'y')
+        return ['mean_tsm.tiff', 'min_tsm.tiff', 'max_tsm.tiff']

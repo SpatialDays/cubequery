@@ -12,8 +12,8 @@ class DoAThing(CubeQueryTask):
     description = "a test task, not really good for anything."
 
     parameters = [
-        Parameter("a", DType.STRING, "string a"),
-        Parameter("b", DType.STRING, "string b"),
+        Parameter("a", "param a", DType.STRING, "string a"),
+        Parameter("b", "param b", DType.STRING, "string b"),
     ]
 
     CubeQueryTask.cal_significant_kwargs(parameters)
