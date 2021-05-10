@@ -144,7 +144,7 @@ def _strip_links(description) :
             if link_mid == end_alt_text:
                 return description[:link_start] + description[link_end+1:]
     except ValueError:
-        pass
+        return description
 
 
 def _process_markdown_description(markdown):
