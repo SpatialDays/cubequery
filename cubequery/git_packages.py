@@ -132,6 +132,21 @@ def _setup(path):
     return name, description, img_url, info_url, function, parameter_code
 
 
+def _strip_links(description) :
+    # find the first []() pair next to each other.
+    found = False
+    try :
+        while not found:
+            link_start = description.index("[")
+            link_mid = description.index("](", link_start)
+            end_alt_text = description.index("]", link_start)
+            link_end = description.index(")", link_start)
+            if link_mid == end_alt_text:
+                return description[:link_start] + description[link_end+1:]
+    except ValueError:
+        return description
+
+
 def _process_markdown_description(markdown):
     description = ""
     display_name = ""
@@ -147,15 +162,20 @@ def _process_markdown_description(markdown):
             if description != "" or line != "":
                 if "<img" in line and img_url == "":
                     # take the first image url as the img_url value for the api
-                    src_index = line.index("src")
+                    img_start = line.index("<img")
+                    img_end = line.index(">", img_start)
+                    src_index = line.index("src", img_start)
+
                     equal_start = line.index("=", src_index)
                     img_url = _extract_value_string(line, equal_start)
-
+                    line = line[:img_start] + line[img_end + 1:]
                 description += line.strip()
                 description += "\n"
 
     info_url = _extract_first_link(description)
     description = description.replace("\"", "\\\"")
+    description = _strip_links(description)
+    description = description.strip("\n")
     logging.debug(f"description set to {description}")
     return display_name, description, img_url, info_url
 

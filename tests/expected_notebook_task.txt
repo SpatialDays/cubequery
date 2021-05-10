@@ -4,9 +4,7 @@ from cubequery.tasks import Parameter, CubeQueryTask, DType
 
 class example_notebook_Task(CubeQueryTask):
 
-    description = """<img src=\"http://example.com/test.jpg\"/>
-[More info](http://example.com/more_info.html)
-Notebook for calculation of Total Suspended Matter(TSM) in water bodies. Uses inputs of Landsat-4, Landsat-5, Landsat-7, Landsat-8 and Sentinel-2.
+    description = """Notebook for calculation of Total Suspended Matter(TSM) in water bodies. Uses inputs of Landsat-4, Landsat-5, Landsat-7, Landsat-8 and Sentinel-2.
 
 TSM stands for \"Total Suspended Matter\" - also called TSS which stands for \"Total Suspended Solids\". It is the dry-weight of particles suspended (not dissolved) in a body of water. It is a proxy of water quality.
 
@@ -15,9 +13,7 @@ https://github.com/ceos-seo/data_cube_notebooks/blob/master/TSM_Demo_Notebook.ip
 
 Academic papers include Lymburner, L., Botha, E., Hestir, E., Anstee, J., Sagar, S., Dekker, A. and Malthus, T., 2016. Landsat 8: providing continuity and increased precision for measuring multi-decadal time series of total suspended matter. Remote Sensing of Environment, 185, pp.108-118.
 
-This paper demonstrates continuity between the Landsat sensors for TSM assessment. Calibration for S2 use has not been carried out.
-
-"""
+This paper demonstrates continuity between the Landsat sensors for TSM assessment. Calibration for S2 use has not been carried out."""
     display_name = " Water Quality Notebook"
     img_url = "http://example.com/test.jpg"
     info_url = "http://example.com/more_info.html"
