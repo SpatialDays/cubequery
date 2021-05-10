@@ -135,13 +135,16 @@ def _setup(path):
 def _strip_links(description) :
     # find the first []() pair next to each other.
     found = False
-    while not found:
-        link_start = description.index("[")
-        link_mid = description.index("](", link_start)
-        end_alt_text = description.index("]", link_start)
-        link_end = description.index(")", link_start)
-        if link_mid == end_alt_text:
-            return description[:link_start] + description[link_end+1:]
+    try :
+        while not found:
+            link_start = description.index("[")
+            link_mid = description.index("](", link_start)
+            end_alt_text = description.index("]", link_start)
+            link_end = description.index(")", link_start)
+            if link_mid == end_alt_text:
+                return description[:link_start] + description[link_end+1:]
+    except ValueError:
+        pass
 
 
 def _process_markdown_description(markdown):
