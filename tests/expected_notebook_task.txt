@@ -4,7 +4,7 @@ from cubequery.tasks import Parameter, CubeQueryTask, DType
 
 class example_notebook_Task(CubeQueryTask):
 
-    description = """<img src=\"http://example.com/test.jpg\"/>
+    description = """
 [More info](http://example.com/more_info.html)
 Notebook for calculation of Total Suspended Matter(TSM) in water bodies. Uses inputs of Landsat-4, Landsat-5, Landsat-7, Landsat-8 and Sentinel-2.
 

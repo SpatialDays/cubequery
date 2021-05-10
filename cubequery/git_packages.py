@@ -147,10 +147,13 @@ def _process_markdown_description(markdown):
             if description != "" or line != "":
                 if "<img" in line and img_url == "":
                     # take the first image url as the img_url value for the api
-                    src_index = line.index("src")
+                    img_start = line.index("<img")
+                    img_end = line.index(">", img_start)
+                    src_index = line.index("src", img_start)
+
                     equal_start = line.index("=", src_index)
                     img_url = _extract_value_string(line, equal_start)
-
+                    line = line[:img_start] + line[img_end + 1:]
                 description += line.strip()
                 description += "\n"
 
