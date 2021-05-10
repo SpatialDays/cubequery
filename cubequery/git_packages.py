@@ -132,6 +132,18 @@ def _setup(path):
     return name, description, img_url, info_url, function, parameter_code
 
 
+def _strip_links(description) :
+    # find the first []() pair next to each other.
+    found = False
+    while not found:
+        link_start = description.index("[")
+        link_mid = description.index("](", link_start)
+        end_alt_text = description.index("]", link_start)
+        link_end = description.index(")", link_start)
+        if link_mid == end_alt_text:
+            return description[:link_start] + description[link_end+1:]
+
+
 def _process_markdown_description(markdown):
     description = ""
     display_name = ""
@@ -159,6 +171,8 @@ def _process_markdown_description(markdown):
 
     info_url = _extract_first_link(description)
     description = description.replace("\"", "\\\"")
+    description = _strip_links(description)
+    description = description.strip("\n")
     logging.debug(f"description set to {description}")
     return display_name, description, img_url, info_url
 
