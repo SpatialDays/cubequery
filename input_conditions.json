@@ -17,12 +17,12 @@
           },
           {
             "id": [
-              "start_date",
-              "end_date",
-              "baseline_start_date",
-              "baseline_end_date",
-              "analysis_start_date",
-              "analysis_end_date"
+                "analysis_time_start",
+                "analysis_time_end",
+                "baseline_time_end",
+                "baseline_time_start",
+                "time_start",
+                "time_end"
             ],
             "value": [
               "2014-01-01"
@@ -50,12 +50,12 @@
         },
         {
           "id": [
-            "start_date",
-            "end_date",
-            "baseline_start_date",
-            "baseline_end_date",
-            "analysis_start_date",
-            "analysis_end_date"
+            "analysis_time_start",
+            "analysis_time_end",
+            "baseline_time_end",
+            "baseline_time_start",
+            "time_start",
+            "time_end"
           ],
           "value": [
             "2015-01-01"
@@ -83,12 +83,12 @@
         },
         {
           "id": [
-            "start_date",
-            "end_date",
-            "baseline_start_date",
-            "baseline_end_date",
-            "analysis_start_date",
-            "analysis_end_date"
+            "analysis_time_start",
+            "analysis_time_end",
+            "baseline_time_end",
+            "baseline_time_start",
+            "time_start",
+            "time_end"
           ],
           "value": [
             "1990-01-01",
@@ -117,12 +117,12 @@
         },
         {
           "id": [
-            "start_date",
-            "end_date",
-            "baseline_start_date",
-            "baseline_end_date",
-            "analysis_start_date",
-            "analysis_end_date"
+            "analysis_time_start",
+            "analysis_time_end",
+            "baseline_time_end",
+            "baseline_time_start",
+            "time_start",
+            "time_end"
           ],
           "value": [
             "1990-01-01",
@@ -166,12 +166,12 @@
           },
         {
           "id": [
-            "start_date",
-            "end_date",
-            "baseline_start_date",
-            "baseline_end_date",
-            "analysis_start_date",
-            "analysis_end_date"
+            "analysis_time_start",
+            "analysis_time_end",
+            "baseline_time_end",
+            "baseline_time_start",
+            "time_start",
+            "time_end"
           ],
           "value": [
             "1999-01-01",
@@ -200,12 +200,12 @@
         },
         {
           "id": [
-            "start_date",
-            "end_date",
-            "baseline_start_date",
-            "baseline_end_date",
-            "analysis_start_date",
-            "analysis_end_date"
+            "analysis_time_start",
+            "analysis_time_end",
+            "baseline_time_end",
+            "baseline_time_start",
+            "time_start",
+            "time_end"
           ],
           "value": [
             "2013-01-01"
