@@ -1,8 +1,12 @@
 name: CI to Docker hub
 
 on:
-  pull_request:
+  push:
     branches: [ master ]
+    paths-ignore:
+      - "**.md"
+      - "**.md.gotmpl"
+      - ".github/**"
 
 jobs:
   server:
