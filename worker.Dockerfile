@@ -22,8 +22,8 @@ RUN conda install --yes \
     && find /opt/conda/ -type f,l -name '*.js.map' -delete \
     && rm -rf /opt/conda/pkgs
 
-RUN groupadd -g 999 celery && \
-    useradd -r -u 999 -g celery celery
+RUN groupadd --gid 999 celery \
+    && useradd --uid 999 --gid celery --shell /bin/bash --create-home celery
 
 USER celery:celery
 
