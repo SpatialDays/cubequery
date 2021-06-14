@@ -1,19 +1,18 @@
 # CubeQuery
 
-This is a tool to provide an api to produce data products from an open data cube. 
+This is a tool to provide an api to produce on demand data products from an open data cube. This system is made up of
+two docker containers, as server and one or more workers. Each will fetch the potential processes from a GitHub repo 
+defined in the configuration.
 
 ## Building and deployment
 
-This project is not designed to be built and run stand alone. You are expected to use the containers
-that this produces as base layers for your own containers, with your workflows and processes embedded
-inside. See the [cubequery-deployment](https://github.com/SatelliteApplicationsCatapult/cubequery-deployment)  project
-for an example of how this should work.
+This project will automatically publish to docker hub on pushes to master.
 
-Most of the build for this project works through the `Makefile` 
+The containers will need to be configured. See [config.cfg](config.cfg) All parameters in there can be adjusted with environment
+variables upper case and with the section name prepended. E.G `APP_SECRET_KEY`
 
-Run `make docker` to build the base containers to work on top of. On windows run the `build.bat` script
-
-Your build of the containers will need to provide connection details for the [Open Data Cube](https://www.opendatacube.org/).
+You will need to set `GIT_URL` at the very least to point to your repo of notebooks. 
+See [NOTEBOOK_DETAILS.md](NOTEBOOK_DETAILS.md) for more information about the process notebooks.
 
 ## Architecture
  
@@ -26,12 +25,7 @@ Your build of the containers will need to provide connection details for the [Op
  1) The workers - This is a [celery](http://www.celeryproject.org/) worker that executes jobs from the queue.
  
  The server and the workers will be based on the containers built from here. The redis deployment can use a standard
- redis container.
- 
- When deploying this the server and the workers must have the same set of processes accessible on both containers. 
- When adding a process: recreate the workers first, and then the server.
- When removing a process: recreate the server first, then the workers. 
- This should mean that you don't end up with tasks being submitted that the workers do not know how to handle.
+ redis container. The processing code will be pulled from the configured github repo on start up.
  
  There can be many workers as you need to keep up with load. We have not tested dynamic creation and removal of workers
  yet.
