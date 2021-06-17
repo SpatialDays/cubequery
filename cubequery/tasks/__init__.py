@@ -29,6 +29,7 @@ class DType(EnumMeta):
     TIME = "time"
     WKT = "wkt"
     MULTI = "multi"
+    YEAR = "year"
 
 
 def map_to_dtype(input):
@@ -51,6 +52,8 @@ def map_to_dtype(input):
         return DType.WKT
     if lower == "multi":
         return DType.MULTI
+    if lower == "year":
+        return DType.YEAR
 
 
 def map_from_dtype(input):
@@ -72,6 +75,8 @@ def map_from_dtype(input):
         return "DType.WKT"
     if input == DType.MULTI:
         return "DType.MULTI"
+    if input == DType.YEAR:
+        return "DType.YEAR"
     raise IndexError()
 
 
