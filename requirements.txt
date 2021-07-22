@@ -12,10 +12,9 @@ datacube==1.8.3
 shapely==1.7.1
 bcrypt~=3.1.7
 
-
 setuptools~=40.8.0
 boto3~=1.17.39
-pip~=19.0.3
+pip~=21.1.2
 six~=1.15.0
 
 nbformat>=4.4
