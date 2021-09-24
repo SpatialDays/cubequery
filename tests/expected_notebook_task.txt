@@ -30,7 +30,7 @@ This paper demonstrates continuity between the Landsat sensors for TSM assessmen
 
     CubeQueryTask.cal_significant_kwargs(parameters)
 
-    def NoteBook_Task_Generate_Product(self, baseline_start_date, baseline_end_date, res, platform):
+    def generate_product(self, baseline_start_date, baseline_end_date, res, platform):
         from pyproj import Proj, transform
         from datacube.storage import masking
         from datacube_utilities.createAOI import create_lat_lon
