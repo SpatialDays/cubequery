@@ -311,7 +311,7 @@ def _generate_function_parameters(parameters):
 def _convert_to_function(function_code, parameters):
     # we've now got to the end of all the code so we can finalise things and actually make our function
     # wrap function in header and return value
-    function_text = f"{tab()}def NoteBook_Task_Generate_Product({_generate_function_parameters(parameters)}):\n"
+    function_text = f"{tab()}def generate_product({_generate_function_parameters(parameters)}):\n"
     function_text = function_text + function_code
 
     last_line = function_text.rindex("\n", 0, function_text.rindex("\n"))
