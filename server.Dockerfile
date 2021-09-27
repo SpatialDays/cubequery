@@ -1,10 +1,10 @@
-FROM satapps/dask-datacube:v3.1.1-alpha as BaseStage
+FROM satapps/dask-datacube:v3.2.1-alpha
 LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 
 COPY . /app/
 WORKDIR /app/
 
-RUN apt-get update \
+RUN apt-get --allow-releaseinfo-change update \
     && apt-get install -yq --no-install-recommends \
     git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -12,7 +12,7 @@ RUN apt-get update \
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir --extra-index-url="https://packages.dea.ga.gov.au" -r requirements.txt
 
-RUN conda install --yes \
+RUN mamba install --yes \
     -c conda-forge \
     geopandas \
     hdmedians \
