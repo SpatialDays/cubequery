@@ -302,7 +302,7 @@ def _render_parameter(param):
 
 
 def _generate_function_parameters(parameters):
-    result = "self"
+    result = "self, dc, path_prefix, user"
     for p in parameters:
         result += ", " + p.name
     return result
