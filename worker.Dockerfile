@@ -1,4 +1,4 @@
-FROM satapps/dask-datacube:v3.2.12-alpha
+FROM satapps/dask-datacube:v3.2.12
 LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 
 COPY . /app/
