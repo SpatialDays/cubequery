@@ -23,7 +23,8 @@ RUN mamba install --yes \
     && rm -rf /opt/conda/pkgs
 
 RUN groupadd --gid 999 celery \
-    && useradd --uid 999 --gid celery --shell /bin/bash --create-home celery
+    && useradd --uid 999 --gid celery --shell /bin/bash --create-home celery \
+    && chmod 777 -R /app/ && chown 999:999 -R /app/
 
 USER celery:celery
 
