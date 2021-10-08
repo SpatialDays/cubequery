@@ -4,6 +4,8 @@ LABEL maintainer="Emily Selwood <emily.selwood@sa.catapult.org.uk>"
 COPY . /app/
 WORKDIR /app/
 
+RUN chmod 777 /app/
+
 RUN apt-get --allow-releaseinfo-change update \
     && apt-get install -yq --no-install-recommends \
     git \
