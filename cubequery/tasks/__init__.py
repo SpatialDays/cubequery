@@ -224,8 +224,11 @@ class CubeQueryTask(JobtasticTask):
 
             # step two send payload
             url = f"{get_config('App', 'result_url')}/submit"
+            result_url = f"http://{get_config('AWS', 's3_endpoint')}/{get_config('AWS', 'bucket')}/{output_url}"
+            if get_config('AWS', 's3_endpoint').startswith("http://"):
+                result_url = result_url[7:]
             payload = {
-                "url": f"http://{get_config('AWS', 's3_endpoint')}/{get_config('AWS', 'bucket')}/{output_url}",
+                "url": result_url,
                 "name": results['user']
             }
             print(f"payload: {payload}")
