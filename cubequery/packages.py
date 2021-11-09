@@ -48,7 +48,8 @@ def _task_info(clazz):
             "display_name": e.display_name,
             "type": e.d_type,
             "description": e.description,
-            "valid_values": e.valid
+            "valid_values": e.valid,
+            "default": e.default,
         }]
 
     return {
