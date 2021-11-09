@@ -54,6 +54,7 @@ def _process_parameter_comment(line):
     description = ""
     data_type = DType.STRING
     valid_values = None
+    default = None
     done = False
     i = 0
     while not done:
@@ -76,6 +77,8 @@ def _process_parameter_comment(line):
             _locals = locals()
             exec(f"valid_values = {param_value}", globals(), _locals)
             valid_values = _locals['valid_values']
+        if param_name == "default":
+            default = param_value
         # look for the next space after the length of the param_value
         i = i + len(param_name) + len(param_value) + 1
         if i >= len(parameters):
@@ -91,7 +94,8 @@ def _process_parameter_comment(line):
         display_name=display_name,
         d_type=data_type,
         description=description,
-        valid=valid_values
+        valid=valid_values,
+        default=default
     )
 
 

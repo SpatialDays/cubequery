@@ -80,9 +80,8 @@ def map_from_dtype(input):
     raise IndexError()
 
 
-
 class Parameter(object):
-    def __init__(self, name, display_name, d_type, description, valid=None):
+    def __init__(self, name, display_name, d_type, description, valid=None, default=None):
         if valid is None:
             valid = []
         self.name = name
@@ -90,6 +89,7 @@ class Parameter(object):
         self.d_type = d_type
         self.description = description
         self.valid = valid
+        self.default = default
 
     def __eq__(self, o: object) -> bool:
         if not super().__eq__(o):
