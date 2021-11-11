@@ -303,9 +303,9 @@ def _render_parameter(param):
     if len(param.valid) > 1:
         result += f", {param.valid}"
         if param.default:
-            result += f", {param.default}"
+            result += f", \"{param.default}\""
     elif param.default:
-        result += f", None, {param.default}"
+        result += f", None, \"{param.default}\""
     result += ")"
     return result
 
