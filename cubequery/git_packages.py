@@ -299,10 +299,15 @@ def _convert_to_parameter_def(parameters):
 
 def _render_parameter(param):
     logging.info(f"{param.name} : {param.display_name}")
+    result = f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\""
     if len(param.valid) > 1:
-        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\", {param.valid})"
-    else:
-        return f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\")"
+        result += f", {param.valid}"
+        if param.default:
+            result += f", \"{param.default}\""
+    elif param.default:
+        result += f", None, \"{param.default}\""
+    result += ")"
+    return result
 
 
 def _generate_function_parameters(parameters):
@@ -362,7 +367,6 @@ def process_notebook(script_path, target_path):
         if not line:
             break
         line = line.replace("class NoteBook_Task(", f"class {filename}_Task(")
-        line = line.replace("path = \"example_notebook.ipynb\"", f"path = \"{script_path}\"")
         line = line.replace("NoteBook_Task_Generate_Product", f"{filename}_Generate_Product")
         line = line.replace("display_name = \"test\"", f"display_name = \"{name}\"")
         line = line.replace("description = \"test\"", f"description = \"\"\"{description}\"\"\"")

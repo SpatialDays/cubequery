@@ -17,13 +17,12 @@ This paper demonstrates continuity between the Landsat sensors for TSM assessmen
     display_name = " Water Quality Notebook"
     img_url = "http://example.com/test.jpg"
     info_url = "http://example.com/more_info.html"
-    path = "/mnt/c/git/cubequery/example_notebook.ipynb"
 
     # this will be the parameter block
     parameters = [
         Parameter("baseline_start_date", "baseline start date", DType.DATE, "start of the baseline window"),
         Parameter("baseline_end_date", "baseline end date", DType.DATE, "end of the baseline window"),
-        Parameter("res", "resolution", DType.INT, "size of pixes"),
+        Parameter("res", "resolution", DType.INT, "size of pixes", None, "30"),
         Parameter("platform", "satellite", DType.STRING, "Satellite to use.", ['SENTINEL_2', 'LANDSAT_4', 'LANDSAT_5', 'LANDSAT_7', 'LANDSAT_8'])
     ]
 

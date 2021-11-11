@@ -8,5 +8,4 @@ class NoteBook_Task(CubeQueryTask):
     display_name = "test"
     img_url = "test"
     info_url = "test"
-    path = "example_notebook.ipynb"
 
