@@ -13,6 +13,8 @@ from jobtastic.cache import WrappedCache
 from cubequery import get_config, users, git_packages, fetch_form_settings
 
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
+from cubequery.users import is_username_valid
+
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -248,7 +250,8 @@ def validate_app_key():
         s = Serializer(get_config("App", "secret_key"))
         try:
             data = s.loads(request.args['APP_KEY'])
-            # TODO: look up the id and make sure its a real one.
+            if not is_username_valid(data['id']):
+                abort(403, "Invalid Username")
             return data['id']
         except SignatureExpired:
             abort(403, "Token expired")

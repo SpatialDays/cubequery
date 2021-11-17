@@ -38,7 +38,7 @@
             request.onload = function () {
                 console.log(this.response);
                 if (request.status >= 200 && request.status < 400) {
-                    system_description = JSON.parse(this.response);
+                    system_description = JSON.parse(this.response)['result'];
                     createForm();
                 }
             };
