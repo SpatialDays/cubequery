@@ -7,7 +7,7 @@ from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
 from flask_caching import Cache
 from flask_cors import CORS
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer, SignatureExpired, BadSignature
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from jobtastic.cache import WrappedCache
 
 from cubequery import get_config, users, git_packages, fetch_form_settings
@@ -74,7 +74,6 @@ def describe():
 
     :return: a JSON encoded list of task description objects.
     """
-    validate_app_key()
 
     result = list_processes()
     
@@ -85,18 +84,15 @@ def describe():
 
 @app.route('/task/<task_id>', methods=['GET'])
 def task_id(task_id):
-    validate_app_key()
-
     logging.info(f"looking up task by id {task_id}")
     i = celery_app.control.inspect()
-
     return jsonify(normalise_single_task(i.query_task(task_id)))
 
 
 @app.route('/task/', methods=['GET'])
 def all_tasks():
-    validate_app_key()
-
+    # Perhaps limit this to user?
+    
     logging.info("looking up all tasks...")
     # note there must be a worker running or this won't return...
     i = celery_app.control.inspect()
@@ -118,46 +114,21 @@ def all_tasks():
 
 @app.route('/result/<task_id>', methods=['GET'])
 def get_result(task_id):
-    validate_app_key()
     result_dir = get_config("App", "result_dir")
     file_name = f"{task_id}_output.zip"
-    target = path.join(result_dir, task_id, file_name)
-    return send_file(target, attachment_filename=file_name)
-
-
-@app.route('/token', methods=['POST'])
-def get_token():
-    payload = request.get_json()
-    if not payload:
-        abort(403, "no payload")
-
-    if not payload['name']:
-        abort(403, "name required")
-
-    user = payload['name']
-    if user in payload:
-        user = payload['user']
-
-    if not payload['pass']:
-        abort(403, "pass required")
-
-    logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
-
-    if not users.check_user(user, payload['pass'], request.remote_addr):
-        abort(403, "bad creds")
-
-    s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
-    return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
-
+    # target = path.join(result_dir, task_id, file_name)
+    target = f'/home/james/Projects/cubequery/~/data/{task_id}/' + file_name
+    if path.exists(target):
+        return send_file(target, mimetype='application/zip', as_attachment=True)
+    else:
+        return abort(404)
 
 @app.route('/task', methods=['POST'])
 def create_task():
-    user_id = validate_app_key()
-
     global celery_app
 
     payload = request.get_json()
-    logging.info(payload)
+        
     if not is_valid_task(payload['task']):
         logging.info(f"invalid task payload {payload}")
         abort(400, "invalid task")
@@ -167,7 +138,7 @@ def create_task():
     logging.info(f"found {thing.name} wanted {payload['task']}")
     logging.info(f"parms: {[p.name for p in thing.parameters]}")
     # work out the args mapping
-    args = {'user': user_id}
+    args = {'user': payload['userid']}
 
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
@@ -194,7 +165,7 @@ def create_task():
     param_block = json.dumps(args)
 
     future = thing.delay_or_fail(**{"params": param_block})
-
+    
     return jsonify({'task_id': future.task_id})
 
 
@@ -236,26 +207,6 @@ def normalise_task_info(info):
                     }]
 
     return result
-
-
-def validate_app_key():
-    """
-    Get the app key parameter from a request and check that it is a valid token.
-    :return: Bool, True if and only if the requests app key is a valid token
-    """
-
-    if 'APP_KEY' in request.args:
-        s = Serializer(get_config("App", "secret_key"))
-        try:
-            data = s.loads(request.args['APP_KEY'])
-            # TODO: look up the id and make sure its a real one.
-            return data['id']
-        except SignatureExpired:
-            abort(403, "Token expired")
-        except BadSignature:
-            abort(403, "Invalid token")
-    abort(403, "No token")
-
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))

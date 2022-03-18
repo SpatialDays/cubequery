@@ -263,16 +263,14 @@ class CubeQueryTask(JobtasticTask):
 
         errors = []
 
-        # Validates AOI
-        search = [p.name for p in self.parameters if p.d_type == DType.WKT]
-        for s in search:
-            errors = self.validate_standard_spatial_query(args[s])
-
         # Validates information against input_conditions.json
         for key in keys:
             for d in _settings_json[key]:
                 if d['name'] == args[key]:
                     for condition in d['conditions']:
+                        # Process specific conditions
+                        if "processes" in condition and self.name not in condition['processes']:
+                            continue
 
                         # Integer Range Validation
                         if condition['type'] == 'int_range':
@@ -299,56 +297,6 @@ class CubeQueryTask(JobtasticTask):
                                             errors.append(create_error_message(condition))
 
         return errors
-
-    # TODO: Bounds conversion and sometimes spatial query dependent on product
-    def validate_standard_spatial_query(self, value):
-
-        errors = []
-
-        try:
-            parsed_polygon = wkt.loads(value)
-        except:
-            return [create_error_message({'id': 'aoi', 'error_message': 'Polygon could not be loaded',
-                                          '_comment': 'Polygon could not be loaded'})]
-
-        '''
-        Returns validity of geometery (bool)
-        * Whole of Fiji = True
-        * Suva = True
-        '''
-        valid_geom = parsed_polygon.is_valid
-        if not valid_geom:
-            errors.append(create_error_message({'id': 'aoi', 'error_message': 'Geometry not a valid polygon',
-                                                '_comment': 'Geometry not a valid polygon'}))
-
-        '''
-        Returns area of polygon - About 1/4 of country ... 0.25 
-        * Whole of Fiji = 1.8662849915034905
-        * Suva = 0.017204474747948426
-        '''
-        area = parsed_polygon.area
-        if area > 0.25:
-            errors.append(create_error_message(
-                {'id': 'aoi', 'error_message': 'AOI area is too large', '_comment': 'Size of polygon is too large'}))
-
-        '''
-        Returns bool for polygon inside Fiji
-        
-        For when antimeridian problem is resolved:
-        with open("TM_FIJI_BORDERS.geojson") as f:
-            features = json.load(f)["features"]
-            fiji_polygon = GeometryCollection([shape(feature["geometry"]).buffer(0) for feature in features])
-        '''
-
-        fiji_polygon = wkt.loads(get_config('App', 'bounding_box'))
-
-        contains = fiji_polygon.contains(parsed_polygon)
-        if contains == False:
-            errors.append(create_error_message({'id': 'aoi', 'error_message': 'AOI out of Fiji bounds',
-                                                '_comment': 'AOI is either completely or partially out of the Fiji bounds'}))
-
-        return errors
-
 
 def login_to_publisher():
     url = f"{get_config('App', 'result_url')}/token"

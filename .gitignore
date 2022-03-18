@@ -10,3 +10,7 @@ dist/
 build/
 junit-report.xml
 redisdata/
+.vscode/launch.json
+.vscode/settings.json
+/~
+/dask-worker-space/
