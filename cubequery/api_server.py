@@ -91,8 +91,6 @@ def task_id(task_id):
 
 @app.route('/task/', methods=['GET'])
 def all_tasks():
-    # Perhaps limit this to user?
-    
     logging.info("looking up all tasks...")
     # note there must be a worker running or this won't return...
     i = celery_app.control.inspect()
