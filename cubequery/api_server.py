@@ -7,12 +7,12 @@ from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
 from flask_caching import Cache
 from flask_cors import CORS
-from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from jobtastic.cache import WrappedCache
 
 from cubequery import get_config, users, git_packages, fetch_form_settings
 
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
+from cubequery.tasks import validate_standard_spatial_query
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -114,8 +114,7 @@ def all_tasks():
 def get_result(task_id):
     result_dir = get_config("App", "result_dir")
     file_name = f"{task_id}_output.zip"
-    # target = path.join(result_dir, task_id, file_name)
-    target = f'/home/james/Projects/cubequery/~/data/{task_id}/' + file_name
+    target = path.join(result_dir, task_id, file_name)
     if path.exists(target):
         return send_file(target, mimetype='application/zip', as_attachment=True)
     else:
@@ -166,6 +165,15 @@ def create_task():
     
     return jsonify({'task_id': future.task_id})
 
+@app.route('/validate-aoi', methods=['POST'])
+def validate_aoi():
+    data = request.get_json()
+    errors = validate_standard_spatial_query(data['aoi'], data['projects'])
+    if errors:
+        return jsonify(errors), 401
+    else:
+        return jsonify([]), 200
+    
 
 def normalise_single_task(info):
     result = []
