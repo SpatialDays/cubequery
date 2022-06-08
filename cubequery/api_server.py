@@ -76,7 +76,6 @@ def describe():
 
     :return: a JSON encoded list of task description objects.
     """
-    
     validate_app_key()
 
     result = list_processes()
@@ -158,14 +157,15 @@ def get_token():
 
 @app.route('/refresh-token', methods=['POST'])
 def refresh_token():
-    data_id = validate_app_key()
+    auth_response = validate_app_key()
+    user_id = auth_response['user_id']
     s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
-    return jsonify({'token': s.dumps({'id': data_id}).decode("utf-8")})
+    return jsonify({'token': s.dumps({'id': user_id}).decode("utf-8")})
 
 
 @app.route('/task', methods=['POST'])
 def create_task():
-    user_id = validate_app_key()
+    auth_response = validate_app_key()
 
     global celery_app
 
@@ -180,7 +180,7 @@ def create_task():
     logging.info(f"found {thing.name} wanted {payload['task']}")
     logging.info(f"parms: {[p.name for p in thing.parameters]}")
     # work out the args mapping
-    args = {'user': payload['userid']}
+    args = {'user': auth_response['user_id']}
 
     for (k, v) in payload['args'].items():
         valid, msg = thing.validate_arg(k, v)
@@ -268,18 +268,26 @@ def validate_app_key():
     :return: Bool, True if and only if the requests app key is a valid token
     """
 
-    if 'APP_KEY' in request.args:
-        s = Serializer(get_config("App", "secret_key"))
-        try:
-            data = s.loads(request.args['APP_KEY'])
-            if not is_username_valid(data['id']):
-                abort(403, "Invalid Username")
-            return data['id']
-        except SignatureExpired:
-            abort(403, "Token expired")
-        except BadSignature:
-            abort(403, "Invalid token")
-    abort(403, "No token")
+    if _to_bool(get_config("App", "require_auth")) == True:
+        if 'APP_KEY' in request.args:
+            s = Serializer(get_config("App", "secret_key"))
+            try:
+                data = s.loads(request.args['APP_KEY'])
+                if not is_username_valid(data['id']):
+                    abort(403, "Invalid Username")
+                return {
+                    'user_id' : data['id'],
+                    'valid_user' : True
+                }
+            except SignatureExpired:
+                abort(403, "Token expired")
+            except BadSignature:
+                abort(403, "Invalid token")
+        abort(403, "No token")
+    return {
+        'user_id' : '1',
+        'valid_user' : False
+    }
 
 
 if __name__ == '__main__':
