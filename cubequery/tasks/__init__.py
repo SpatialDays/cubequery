@@ -263,7 +263,7 @@ class CubeQueryTask(JobtasticTask):
         keys = [k for k in _settings_json if k in args]
 
         errors = []
-        
+
         # Validates AOI
         search = [p.name for p in self.parameters if p.d_type == DType.WKT]
         for s in search:
