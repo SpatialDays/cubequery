@@ -16,7 +16,6 @@ from cubequery.packages import is_valid_task, load_task_instance, list_processes
 from cubequery.tasks import validate_standard_spatial_query
 from cubequery.users import is_username_valid
 
-
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
 
