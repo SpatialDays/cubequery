@@ -14,6 +14,8 @@ from cubequery import get_config, users, git_packages, fetch_form_settings
 
 from cubequery.packages import is_valid_task, load_task_instance, list_processes
 from cubequery.tasks import validate_standard_spatial_query
+from cubequery.users import is_username_valid
+
 
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
@@ -155,6 +157,13 @@ def get_token():
     return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
 
 
+@app.route('/refresh-token', methods=['POST'])
+def refresh_token():
+    data_id = validate_app_key()
+    s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
+    return jsonify({'token': s.dumps({'id': data_id}).decode("utf-8")})
+
+
 @app.route('/task', methods=['POST'])
 def create_task():
     user_id = validate_app_key()
@@ -264,7 +273,8 @@ def validate_app_key():
         s = Serializer(get_config("App", "secret_key"))
         try:
             data = s.loads(request.args['APP_KEY'])
-            # TODO: look up the id and make sure its a real one.
+            if not is_username_valid(data['id']):
+                abort(403, "Invalid Username")
             return data['id']
         except SignatureExpired:
             abort(403, "Token expired")

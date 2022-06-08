@@ -42,3 +42,13 @@ def check_user(username, password, ip_address):
     except Exception as e:
         logging.warning(f'User validation error :: {e}')
     return False
+
+
+def is_username_valid(username):
+    load_users()
+    try:
+        if _users[username]:
+            return True
+    except Exception as e:
+        logging.warning(f'User validation error :: {e}')
+    return False
