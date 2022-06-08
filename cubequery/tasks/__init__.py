@@ -1,4 +1,5 @@
 import json
+import ast
 import logging
 import os
 import zipfile
@@ -266,13 +267,19 @@ class CubeQueryTask(JobtasticTask):
         # Validates AOI
         search = [p.name for p in self.parameters if p.d_type == DType.WKT]
         for s in search:
-            errors = self.validate_standard_spatial_query(args[s])
+            errors = validate_standard_spatial_query(args[s])
 
         # Validates information against input_conditions.json
+        # Parameters to be validated e.g. platform
         for key in keys:
+            # The value of the parameter
             for d in _settings_json[key]:
+                # If the param is included in arguments
                 if d['name'] == args[key]:
                     for condition in d['conditions']:
+                        # Check for process specific condition
+                        if "processes" in condition and self.name not in condition['processes']:
+                            continue
 
                         # Integer Range Validation
                         if condition['type'] == 'int_range':
@@ -300,54 +307,58 @@ class CubeQueryTask(JobtasticTask):
 
         return errors
 
-    # TODO: Bounds conversion and sometimes spatial query dependent on product
-    def validate_standard_spatial_query(self, value):
 
-        errors = []
+def validate_standard_spatial_query(aoi, countries):
+    
+    errors = []
 
-        try:
-            parsed_polygon = wkt.loads(value)
-        except:
-            return [create_error_message({'id': 'aoi', 'error_message': 'Polygon could not be loaded',
-                                          '_comment': 'Polygon could not be loaded'})]
+    try:
+        parsed_polygon = wkt.loads(aoi)
+    except:
+        return [create_error_message({'id': 'aoi', 'error_message': 'Polygon could not be loaded',
+                                        '_comment': 'Polygon could not be loaded'})]
 
-        '''
-        Returns validity of geometery (bool)
-        * Whole of Fiji = True
-        * Suva = True
-        '''
-        valid_geom = parsed_polygon.is_valid
-        if not valid_geom:
-            errors.append(create_error_message({'id': 'aoi', 'error_message': 'Geometry not a valid polygon',
-                                                '_comment': 'Geometry not a valid polygon'}))
+    '''
+    Returns validity of geometery (bool)
+    * Whole of Fiji = True
+    * Suva = True
+    '''
+    valid_geom = parsed_polygon.is_valid
+    if not valid_geom:
+        errors.append(create_error_message({'id': 'aoi', 'error_message': 'Geometry not a valid polygon',
+                                            '_comment': 'Geometry not a valid polygon'}))
 
-        '''
-        Returns area of polygon - About 1/4 of country ... 0.25 
-        * Whole of Fiji = 1.8662849915034905
-        * Suva = 0.017204474747948426
-        '''
-        area = parsed_polygon.area
-        if area > 0.25:
-            errors.append(create_error_message(
-                {'id': 'aoi', 'error_message': 'AOI area is too large', '_comment': 'Size of polygon is too large'}))
+    '''
+    Returns area of polygon - About 1/4 of country ... 0.25 
+    * Whole of Fiji = 1.8662849915034905
+    * Suva = 0.017204474747948426
+    '''
+    area = parsed_polygon.area
+    if area > 0.25:
+        errors.append(create_error_message(
+            {'id': 'aoi', 'error_message': 'AOI area is too large', '_comment': 'Size of polygon is too large'}))
 
-        '''
-        Returns bool for polygon inside Fiji
-        
-        For when antimeridian problem is resolved:
-        with open("TM_FIJI_BORDERS.geojson") as f:
-            features = json.load(f)["features"]
-            fiji_polygon = GeometryCollection([shape(feature["geometry"]).buffer(0) for feature in features])
-        '''
+    '''
+    Returns bool for polygon inside Fiji
+    
+    For when antimeridian problem is resolved:
+    with open("TM_FIJI_BORDERS.geojson") as f:
+        features = json.load(f)["features"]
+        fiji_polygon = GeometryCollection([shape(feature["geometry"]).buffer(0) for feature in features])
+    '''
+    projects=get_config("Boundaries", "projects")
+    available_countries = {k: v for k, v in ast.literal_eval(projects).items() if k in countries}
 
-        fiji_polygon = wkt.loads(get_config('App', 'bounding_box'))
+    valid_geom = False       
+    for country in available_countries.keys():
+        if parsed_polygon.within(wkt.loads(available_countries[country]['bounds'])):
+            valid_geom = True
+    
+    if not valid_geom:
+        errors.append(create_error_message({'id': 'aoi', 'error_message': 'AOI is not within your available countries',
+                                            '_comment': 'AOI is not within the available country'}))
 
-        contains = fiji_polygon.contains(parsed_polygon)
-        if contains == False:
-            errors.append(create_error_message({'id': 'aoi', 'error_message': 'AOI out of Fiji bounds',
-                                                '_comment': 'AOI is either completely or partially out of the Fiji bounds'}))
-
-        return errors
+    return errors
 
 
 def login_to_publisher():
