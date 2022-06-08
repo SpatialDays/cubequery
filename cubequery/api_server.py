@@ -88,9 +88,10 @@ def describe():
 @app.route('/task/<task_id>', methods=['GET'])
 def task_id(task_id):
     validate_app_key()
-    
+
     logging.info(f"looking up task by id {task_id}")
     i = celery_app.control.inspect()
+
     return jsonify(normalise_single_task(i.query_task(task_id)))
 
 
@@ -128,10 +129,36 @@ def get_result(task_id):
     else:
         return abort(404)
 
+
+@app.route('/token', methods=['POST'])
+def get_token():
+    payload = request.get_json()
+    if not payload:
+        abort(403, "no payload")
+
+    if not payload['name']:
+        abort(403, "name required")
+
+    user = payload['name']
+    if user in payload:
+        user = payload['user']
+
+    if not payload['pass']:
+        abort(403, "pass required")
+
+    logging.info(f"log in request for {payload['name']} from {request.remote_addr}")
+
+    if not users.check_user(user, payload['pass'], request.remote_addr):
+        abort(403, "bad creds")
+
+    s = Serializer(get_config("App", "secret_key"), expires_in=int(get_config("App", "token_duration")))
+    return jsonify({'token': s.dumps({'id': payload['name']}).decode("utf-8")})
+
+
 @app.route('/task', methods=['POST'])
 def create_task():
     user_id = validate_app_key()
-    
+
     global celery_app
 
     payload = request.get_json()
@@ -244,6 +271,7 @@ def validate_app_key():
         except BadSignature:
             abort(403, "Invalid token")
     abort(403, "No token")
+
 
 if __name__ == '__main__':
     app.run(host=get_config("App", "host"))
