@@ -1,7 +1,7 @@
 {
   "platform": [
     {
-        "name": "SENTINEL_1",
+        "name": "sentinel_1",
         "conditions": [
           {
             "id": [
@@ -34,7 +34,7 @@
         ]
       },
     {
-      "name": "SENTINEL_2",
+      "name": "sentinel_2",
       "conditions": [
         {
           "id": [
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "name": "LANDSAT_4",
+      "name": "landsat_4",
       "conditions": [
         {
           "id": [
@@ -101,7 +101,7 @@
       ]
     },
     {
-      "name": "LANDSAT_5",
+      "name": "landsat_5",
       "conditions": [
         {
           "id": [
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "name": "LANDSAT_7",
+      "name": "landsat_7",
       "conditions": [
         {
           "id": [
@@ -184,7 +184,7 @@
       ]
     },
     {
-      "name": "LANDSAT_8",
+      "name": "landsat_8",
       "conditions": [
         {
           "id": [

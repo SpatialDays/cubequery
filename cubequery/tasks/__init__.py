@@ -265,9 +265,11 @@ class CubeQueryTask(JobtasticTask):
         errors = []
 
         # Validates AOI
-        search = [p.name for p in self.parameters if p.d_type == DType.WKT]
-        for s in search:
-            errors = validate_standard_spatial_query(args[s])
+        wkt_fields = [p.name for p in self.parameters if p.d_type == DType.WKT]
+        countries = ast.literal_eval(get_config("Boundaries", "projects")).keys()
+
+        for s in wkt_fields:
+            errors = validate_standard_spatial_query(args[s], countries)
 
         # Validates information against input_conditions.json
         # Parameters to be validated e.g. platform
