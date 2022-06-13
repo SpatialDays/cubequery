@@ -125,9 +125,23 @@ def get_result(task_id):
     file_name = f"{task_id}_output.zip"
     target = path.join(result_dir, task_id, file_name)
     if path.exists(target):
-        return send_file(target, mimetype='application/zip', as_attachment=True)
+        # Get full path to file (needed due to Flask's send_file picking the wrong root directory)
+        full_result_path = path.abspath(target)
+        return send_file(full_result_path, mimetype='application/zip', as_attachment=True)
     else:
         return abort(404)
+
+
+@app.route('/result/<task_id>/metadata', methods=['GET'])
+def get_result_metadata(task_id):
+    validate_app_key()
+    result_dir = get_config("App", "result_dir")
+    file_name = "query.json"
+    target = path.join(result_dir, task_id, file_name)
+    if path.exists(target):
+        query = json.load(open(target))
+        return jsonify(query)
+    return abort(404)
 
 
 @app.route('/token', methods=['POST'])
