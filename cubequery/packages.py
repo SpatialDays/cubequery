@@ -133,6 +133,13 @@ def list_processes():
     return result
 
 
+def add_extra_lib_path():
+    d = get_config("Git", "repo_dir")
+    if d not in sys.path:
+        logger.info(f"adding repo {d} to python path")
+        sys.path.append(d)
+
+
 def load_task_instance(name):
     """
     Create an instance of the provided task name.
