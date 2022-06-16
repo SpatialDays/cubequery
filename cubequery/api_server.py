@@ -16,6 +16,7 @@ from cubequery.packages import is_valid_task, load_task_instance, list_processes
 from cubequery.tasks import validate_standard_spatial_query
 from cubequery.users import is_username_valid
 
+
 def _to_bool(input):
     return input.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
 
@@ -34,7 +35,9 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.url_map.strict_slashes = False
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
-cors = CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
+
+if not _to_bool(get_config("App", "require_auth")):
+    CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 git_packages.process_repo()
 
@@ -211,18 +214,18 @@ def create_task():
         if process_specific_validation:
             errors += process_specific_validation
 
-    if errors != []:
+    if errors:
         logging.warning(f"invalid request: {errors}")
         error_message = jsonify(errors)
         error_message.status_code = 400
         return error_message
-        
 
     param_block = json.dumps(args)
 
     future = thing.delay_or_fail(**{"params": param_block})
 
     return jsonify({'task_id': future.task_id})
+
 
 @app.route('/validate-aoi', methods=['POST'])
 def validate_aoi():
@@ -282,7 +285,7 @@ def validate_app_key():
     :return: Bool, True if and only if the requests app key is a valid token
     """
 
-    if _to_bool(get_config("App", "require_auth")) == True:
+    if _to_bool(get_config("App", "require_auth")):
         if 'APP_KEY' in request.args:
             s = Serializer(get_config("App", "secret_key"))
             try:
@@ -290,8 +293,8 @@ def validate_app_key():
                 if not is_username_valid(data['id']):
                     abort(403, "Invalid Username")
                 return {
-                    'user_id' : data['id'],
-                    'valid_user' : True
+                    'user_id': data['id'],
+                    'valid_user': True
                 }
             except SignatureExpired:
                 abort(403, "Token expired")
@@ -299,8 +302,8 @@ def validate_app_key():
                 abort(403, "Invalid token")
         abort(403, "No token")
     return {
-        'user_id' : '1',
-        'valid_user' : False
+        'user_id': '1',
+        'valid_user': False
     }
 
 
