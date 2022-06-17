@@ -404,7 +404,6 @@ def process_repo():
         repo.git.checkout(branch)
 
     logging.debug("done clone")
-    # TODO: do we need to be able to set the branch here?
 
     # find the list of notebooks to process.
 

@@ -12,7 +12,7 @@ from jobtastic.cache import WrappedCache
 
 from cubequery import get_config, users, git_packages, fetch_form_settings
 
-from cubequery.packages import is_valid_task, load_task_instance, list_processes
+from cubequery.packages import is_valid_task, load_task_instance, list_processes, add_extra_lib_path
 from cubequery.tasks import validate_standard_spatial_query
 from cubequery.users import is_username_valid
 
@@ -41,6 +41,7 @@ if _to_bool(get_config("App", "require_auth")):
 
 git_packages.process_repo()
 
+
 logging.info(f"setting up celery connection to {redis_url}")
 celery_app = Celery('tasks', backend=redis_url, broker=redis_url, methods=['GET', 'POST'], supports_credentials=True)
 
@@ -53,6 +54,8 @@ celery_app.conf.update(
     task_track_started=True,
     JOBTASTIC_CACHE=cache,
 )
+
+add_extra_lib_path()
 
 packages = [m['name'].replace("/", ".") for m in list_processes()]
 if len(packages):
@@ -187,7 +190,7 @@ def create_task():
     global celery_app
 
     payload = request.get_json()
-    
+
     if not is_valid_task(payload['task']):
         logging.info(f"invalid task payload {payload}")
         abort(400, "invalid task")
@@ -230,14 +233,14 @@ def create_task():
 @app.route('/validate-aoi', methods=['POST'])
 def validate_aoi():
     validate_app_key()
-    
+
     data = request.get_json()
     errors = validate_standard_spatial_query(data['aoi'], data['projects'])
     if errors:
         return jsonify(errors), 401
     else:
         return jsonify([]), 200
-    
+
 
 def normalise_single_task(info):
     result = []
