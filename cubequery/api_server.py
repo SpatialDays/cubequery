@@ -36,7 +36,7 @@ app.url_map.strict_slashes = False
 app.config.from_mapping(config)
 cache = WrappedCache(Cache(app))
 
-if not _to_bool(get_config("App", "require_auth")):
+if _to_bool(get_config("App", "require_auth")):
     CORS(app, resources={r"/*": {"origins": get_config("App", "cors_origin")}}, send_wildcard=True, allow_headers=['Content-Type'])
 
 git_packages.process_repo()
