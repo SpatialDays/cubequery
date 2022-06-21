@@ -232,7 +232,7 @@ class CubeQueryTask(JobtasticTask):
                 "url": result_url,
                 "name": results['user']
             }
-            print(f"payload: {payload}")
+            logging.info(f"payload: {payload}")
 
             req = Request(url, json.dumps(payload).encode(), headers=_http_headers)
             try:
@@ -242,6 +242,9 @@ class CubeQueryTask(JobtasticTask):
             except HTTPError as e:
                 logging.error(f"could not log into publish server {e}")
                 raise e
+            except Exception as e:
+                logging.error(f"Could not send results message {e}")
+                # intentionally swallowing error as the data has still been generated at this point.
 
     herd_avoidance_timeout = 60
     cache_duration = 60 * 60 * 24  # One day of seconds
