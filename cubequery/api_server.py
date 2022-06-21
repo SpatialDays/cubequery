@@ -1,7 +1,7 @@
 import json
 import logging
 import os
-from os import path
+from io import BytesIO
 
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
@@ -15,6 +15,7 @@ from cubequery import get_config, users, git_packages, fetch_form_settings
 from cubequery.packages import is_valid_task, load_task_instance, list_processes, add_extra_lib_path
 from cubequery.tasks import validate_standard_spatial_query
 from cubequery.users import is_username_valid
+from libcatapult.storage.s3_tools import S3Utils
 
 
 def _to_bool(input):
@@ -127,27 +128,14 @@ def all_tasks():
 @app.route('/result/<task_id>', methods=['GET'])
 def get_result(task_id):
     validate_app_key()
-    result_dir = get_config("App", "result_dir")
-    file_name = f"{task_id}_output.zip"
-    target = path.join(result_dir, task_id, file_name)
-    if path.exists(target):
-        # Get full path to file (needed due to Flask's send_file picking the wrong root directory)
-        full_result_path = path.abspath(target)
-        return send_file(full_result_path, mimetype='application/zip', as_attachment=True)
-    else:
-        return abort(404)
+    source_file_path = os.path.join(get_config("AWS", "path_prefix"), task_id + "_output.zip")
 
-
-@app.route('/result/<task_id>/metadata', methods=['GET'])
-def get_result_metadata(task_id):
-    validate_app_key()
-    result_dir = get_config("App", "result_dir")
-    file_name = "query.json"
-    target = path.join(result_dir, task_id, file_name)
-    if path.exists(target):
-        query = json.load(open(target))
-        return jsonify(query)
-    return abort(404)
+    s3_tools = S3Utils(get_config("AWS", "access_key_id"), get_config("AWS", "secret_access_key"),
+                       get_config("AWS", "bucket"), get_config("AWS", "end_point"),
+                       get_config("AWS", "region"))
+    obj = s3_tools.s3.Object(get_config("AWS", "bucket"), source_file_path)
+    stream = obj.get()['Body']
+    return send_file(BytesIO(stream.read()), mimetype='application/zip', as_attachment=True, attachment_filename=task_id + "_output.zip")
 
 
 @app.route('/token', methods=['POST'])
