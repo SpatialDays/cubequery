@@ -1,8 +1,7 @@
 import json
 import logging
 import os
-from os import path
-import boto3
+from io import BytesIO
 
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
@@ -16,6 +15,7 @@ from cubequery import get_config, users, git_packages, fetch_form_settings
 from cubequery.packages import is_valid_task, load_task_instance, list_processes, add_extra_lib_path
 from cubequery.tasks import validate_standard_spatial_query
 from cubequery.users import is_username_valid
+from libcatapult.storage.s3_tools import S3Utils
 
 
 def _to_bool(input):
@@ -128,62 +128,14 @@ def all_tasks():
 @app.route('/result/<task_id>', methods=['GET'])
 def get_result(task_id):
     validate_app_key()
-    result_dir = get_config("App", "result_dir")
-    file_name = f"{task_id}_output.zip"
-    target = path.join(result_dir, task_id, file_name)
-    if path.exists(target):
-        # Get full path to file (needed due to Flask's send_file picking the wrong root directory)
-        full_result_path = path.abspath(target)
-        return send_file(full_result_path, mimetype='application/zip', as_attachment=True)
-    else:
-        return abort(404)
-
-
-@app.route('/result/<task_id>/metadata', methods=['GET'])
-def get_result_metadata(task_id):
-    validate_app_key()
-    result_dir = get_config("App", "result_dir")
-    file_name = "query.json"
-    target = path.join(result_dir, task_id, file_name)
-    if path.exists(target):
-        query = json.load(open(target))
-        return jsonify(query)
-    return abort(404)
-
-
-@app.route('/result/<task_id>/download', methods=['GET'])
-def download_result(task_id):
-    '''
-    Endpoint that downloads the result from the S3 bucket
-
-    TODO: To be moved into S3Utils in the future
-    '''
-
-    validate_app_key()
-
     source_file_path = os.path.join(get_config("AWS", "path_prefix"), task_id + "_output.zip")
 
-    logging.info(f"Downloading {source_file_path}")
-
-    s3_resource = boto3.resource(
-        "s3",
-        endpoint_url=get_config("AWS", "end_point"),
-        region_name=get_config("AWS", "region"),
-        aws_access_key_id=get_config("AWS", "access_key_id"),
-        aws_secret_access_key=get_config("AWS", "secret_access_key"),
-    )
-
-    bucket = get_config("AWS", "bucket")
-
-    output_directory = os.path.join(get_config("App", "result_dir"), task_id)
-    s3_resource.Bucket(bucket).download_file(source_file_path, output_directory)
-
-    if path.exists(output_directory):
-        # Get full path to file (needed due to Flask's send_file picking the wrong root directory)
-        full_result_path = path.abspath(output_directory)
-        return send_file(full_result_path, mimetype='application/zip', as_attachment=True)
-
-    return abort(404, "result not found")
+    s3_tools = S3Utils(get_config("AWS", "access_key_id"), get_config("AWS", "secret_access_key"),
+                       get_config("AWS", "bucket"), get_config("AWS", "end_point"),
+                       get_config("AWS", "region"))
+    obj = s3_tools.s3.Object(get_config("AWS", "bucket"), source_file_path)
+    stream = obj.get()['Body']
+    return send_file(BytesIO(stream.read()), mimetype='application/zip', as_attachment=True, attachment_filename=task_id + "_output.zip")
 
 
 @app.route('/token', methods=['POST'])
