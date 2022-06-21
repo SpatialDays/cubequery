@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from os import path
+import boto3
 
 from celery import Celery
 from flask import Flask, request, abort, render_template, jsonify, send_file
@@ -148,6 +149,41 @@ def get_result_metadata(task_id):
         query = json.load(open(target))
         return jsonify(query)
     return abort(404)
+
+
+@app.route('/result/<task_id>/download', methods=['GET'])
+def download_result(task_id):
+    '''
+    Endpoint that downloads the result from the S3 bucket
+
+    TODO: To be moved into S3Utils in the future
+    '''
+
+    validate_app_key()
+
+    source_file_path = os.path.join(get_config("AWS", "path_prefix"), task_id + "_output.zip")
+
+    logging.info(f"Downloading {source_file_path}")
+
+    s3_resource = boto3.resource(
+        "s3",
+        endpoint_url=get_config("AWS", "end_point"),
+        region_name=get_config("AWS", "region"),
+        aws_access_key_id=get_config("AWS", "access_key_id"),
+        aws_secret_access_key=get_config("AWS", "secret_access_key"),
+    )
+
+    bucket = get_config("AWS", "bucket")
+
+    output_directory = os.path.join(get_config("App", "result_dir"), task_id)
+    s3_resource.Bucket(bucket).download_file(source_file_path, output_directory)
+
+    if path.exists(output_directory):
+        # Get full path to file (needed due to Flask's send_file picking the wrong root directory)
+        full_result_path = path.abspath(output_directory)
+        return send_file(full_result_path, mimetype='application/zip', as_attachment=True)
+
+    return abort(404, "result not found")
 
 
 @app.route('/token', methods=['POST'])
