@@ -95,7 +95,8 @@ def _process_parameter_comment(line):
         d_type=data_type,
         description=description,
         valid=valid_values,
-        default=default
+        default=default,
+        example_value="",
     )
 
 
@@ -103,6 +104,7 @@ def _process_parameter_name(parameter, line):
     stripped = line.strip()
     split = stripped.index("=")
     parameter.name = stripped[:split].strip()
+    parameter.example_value = stripped[split:].strip()
     return parameter
 
 
@@ -134,6 +136,22 @@ def _setup(path):
     function = _convert_to_function(function_code, parameters)
     parameter_code = _convert_to_parameter_def(parameters)
     return name, description, img_url, info_url, function, parameter_code
+
+def _setup_parameters(path):
+    try:
+        logging.debug(f"starting to create task from notebook {path}")
+        notebook = nbformat.read(path, as_version=4)
+    except:
+        logging.debug("could not open notebook")
+        return
+    parameters = []
+    function_code = ""
+    for cell in notebook.cells:
+        if cell.cell_type == "code":
+            # process the code blocks.
+            function_code, parameters = _process_code(function_code, parameters, cell.source)
+
+    return parameters
 
 
 def _strip_links(description) :
@@ -338,6 +356,9 @@ def tab():
 
 def _create_filename(script_path):
     return os.path.splitext(os.path.basename(script_path))[0]
+
+def get_parameters_from_notebook(script_path):
+    parameters =
 
 
 def process_notebook(script_path, target_path):
