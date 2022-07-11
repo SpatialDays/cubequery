@@ -50,6 +50,7 @@ def _task_info(clazz):
             "description": e.description,
             "valid_values": e.valid,
             "default": e.default,
+            "example_value": e.example_value
         }]
 
     return {
