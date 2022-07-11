@@ -50,7 +50,7 @@ def _extract_value_string(line, start):
         start_offset = 0
         end_offset = 1
     else:
-        return line[start:].split(' ')[0]
+        return line[start:].split(' ')[0].split('=')[0]
 
     end_index = line.index(end_mark, start + 1)
     return line[start + start_offset: end_index + end_offset]
