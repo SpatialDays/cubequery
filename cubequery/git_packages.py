@@ -4,6 +4,7 @@ import logging
 import nbformat
 import shutil
 
+import ast
 import re
 from git import Repo
 
@@ -40,6 +41,16 @@ def _extract_value_string(line, start):
         end_mark = "]"
         start_offset = 0
         end_offset = 1
+    elif line[start] == "(":
+        end_mark = ")"
+        start_offset = 0
+        end_offset = 1
+    elif line[start] == "{":
+        end_mark = "}"
+        start_offset = 0
+        end_offset = 1
+    else:
+        return line[start:].split(' ')[0].split('=')[0]
 
     end_index = line.index(end_mark, start + 1)
     return line[start + start_offset: end_index + end_offset]
@@ -101,10 +112,13 @@ def _process_parameter_comment(line):
 
 
 def _process_parameter_name(parameter, line):
-    stripped = line.strip()
-    split = stripped.index("=")
-    parameter.name = stripped[:split].strip()
-    parameter.example_value = stripped[split:].strip()
+    parameter.name = _extract_value_string(line, 0)
+    example_value = _extract_value_string(line, line.index("=") + 1)
+
+    if parameter.d_type in ['wkt', 'str', 'date'] and example_value[0] != "[" and example_value[-1] != "]":
+        parameter.example_value = example_value
+    else:
+        parameter.example_value = ast.literal_eval(example_value)
     return parameter
 
 
@@ -136,22 +150,6 @@ def _setup(path):
     function = _convert_to_function(function_code, parameters)
     parameter_code = _convert_to_parameter_def(parameters)
     return name, description, img_url, info_url, function, parameter_code
-
-def _setup_parameters(path):
-    try:
-        logging.debug(f"starting to create task from notebook {path}")
-        notebook = nbformat.read(path, as_version=4)
-    except:
-        logging.debug("could not open notebook")
-        return
-    parameters = []
-    function_code = ""
-    for cell in notebook.cells:
-        if cell.cell_type == "code":
-            # process the code blocks.
-            function_code, parameters = _process_code(function_code, parameters, cell.source)
-
-    return parameters
 
 
 def _strip_links(description) :
@@ -317,13 +315,18 @@ def _convert_to_parameter_def(parameters):
 
 def _render_parameter(param):
     logging.info(f"{param.name} : {param.display_name}")
-    result = f"Parameter(\"{param.name}\", \"{param.display_name}\", {map_from_dtype(param.d_type)}, \"{param.description}\""
+    result = f"Parameter(name=\"{param.name}\", display_name=\"{param.display_name}\", d_type={map_from_dtype(param.d_type)}, description=\"{param.description}\""
     if len(param.valid) > 1:
-        result += f", {param.valid}"
+        result += f", valid={param.valid}"
         if param.default:
-            result += f", \"{param.default}\""
+            result += f", default=\"{param.default}\""
     elif param.default:
-        result += f", None, \"{param.default}\""
+        result += f", None, default=\"{param.default}\""
+    if param.example_value:
+        if isinstance(param.example_value, str):
+            result += f", example_value=\"{param.example_value}\""
+        else:
+            result += f", example_value={param.example_value}"
     result += ")"
     return result
 
@@ -356,9 +359,6 @@ def tab():
 
 def _create_filename(script_path):
     return os.path.splitext(os.path.basename(script_path))[0]
-
-def get_parameters_from_notebook(script_path):
-    parameters =
 
 
 def process_notebook(script_path, target_path):
