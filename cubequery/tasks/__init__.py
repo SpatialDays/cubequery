@@ -21,6 +21,10 @@ from libcatapult.storage.s3_tools import S3Utils
 
 _http_headers = {"Content-Type": "application/json", "User-Agent": "cubequery-result"}
 
+connection = psycopg2.connect(host=get_config('datacube', 'db_hostname'),
+                            database=get_config('datacube', 'db_database'),
+                            user=get_config('datacube', 'db_username'),
+                            password=get_config('datacube', 'db_password'))
 
 class DType(EnumMeta):
     STRING = "str"
@@ -381,12 +385,7 @@ def check_database_spatial(aoi, platform, start_date, end_date):
     if datetime.strptime(end_date, "%Y-%m-%d") is None:
         raise ValueError("End date must be a valid date")
 
-    # Connect to database
-    connection = psycopg2.connect(host=get_config("Database", "host"),
-                                      port=get_config("Database", "port"),
-                                      database=get_config("Database", "database"),
-                                      user=get_config("Database", "user"),
-                                      password=get_config("Database", "password"))
+    # Establish cursor
     cursor = connection.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
 
     # Query to fetch dataset_type_ref

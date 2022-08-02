@@ -12,7 +12,7 @@ __version__ = '0.1.0'
 import logstash
 
 _config = configparser.ConfigParser()
-_config.read("config.cfg")
+_config.read(["config.cfg", "/etc/datacube.conf"])
 
 settings_json = ""
 
