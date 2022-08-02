@@ -168,7 +168,7 @@ class CubeQueryTask(JobtasticTask):
 
         return True, ""
 
-    def calculate_result(self, **kwargs):
+    def calculate_result(self, publish, **kwargs):
         """
         This is the entry point for a task run. Will be called by celery.
 
@@ -191,10 +191,10 @@ class CubeQueryTask(JobtasticTask):
         logging.info(f"got result of {outputs}")
         self.log_query(path_prefix)
         self.zip_outputs(path_prefix, outputs)
-        # TODO: put the results some where, send notifications etc.
-        output_url = self.upload_results(path_prefix)
 
-        self.ping_results(output_url, args)
+        output_url = self.upload_results(path_prefix)
+        if publish:
+            self.ping_results(output_url, args)
 
     def log_query(self, path_prefix):
         output = path.join(path_prefix, "query.json")
