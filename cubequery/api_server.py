@@ -13,7 +13,7 @@ from jobtastic.cache import WrappedCache
 from cubequery import get_config, users, git_packages, fetch_form_settings
 
 from cubequery.packages import is_valid_task, load_task_instance, list_processes, add_extra_lib_path
-from cubequery.tasks import validate_standard_spatial_query
+from cubequery.tasks import validate_standard_spatial_query, check_database_spatial
 from cubequery.users import is_username_valid
 from libcatapult.storage.s3_tools import S3Utils
 
@@ -226,9 +226,15 @@ def validate_aoi():
     errors = validate_standard_spatial_query(data['aoi'], data['projects'])
     if errors:
         return jsonify(errors), 401
-    else:
-        return jsonify([]), 200
+    return jsonify([]), 200
 
+
+@app.route('/check-data-availability', methods=['POST'])
+def check_data_availability():
+    validate_app_key()
+
+    data = request.get_json()
+    return check_database_spatial(data['aoi'], data['platform'], data['startDate'], data['endDate'])
 
 def normalise_single_task(info):
     result = []

@@ -8,6 +8,8 @@ from enum import EnumMeta
 from os import path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+import psycopg2
+import psycopg2.extras
 
 import datacube
 from jobtastic import JobtasticTask
@@ -365,6 +367,51 @@ def validate_standard_spatial_query(aoi, countries):
                                             '_comment': 'AOI is not within the available country'}))
 
     return errors
+
+
+def check_database_spatial(aoi, platform, start_date, end_date):
+    # Check that the params are safe and valid
+    if not aoi.startswith("POLYGON"):
+        raise ValueError("AOI must be a polygon")
+
+    # Check if start and end date are strings of dates
+    if datetime.strptime(start_date, "%Y-%m-%d") is None:
+        raise ValueError("Start date must be a valid date")
+
+    if datetime.strptime(end_date, "%Y-%m-%d") is None:
+        raise ValueError("End date must be a valid date")
+
+    # Connect to database
+    connection = psycopg2.connect(host=get_config("Database", "host"),
+                                      port=get_config("Database", "port"),
+                                      database=get_config("Database", "database"),
+                                      user=get_config("Database", "user"),
+                                      password=get_config("Database", "password"))
+    cursor = connection.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+
+    # Query to fetch dataset_type_ref
+    q = """
+    SELECT id FROM agdc.dataset_type WHERE name = %s
+    """
+    cursor.execute(q, (platform,))
+    dataset_type_ref = cursor.fetchone()['id']
+
+    # Spatial query if data exists
+    q = """
+    SELECT id FROM cubedash.dataset_spatial WHERE dataset_type_ref = %s AND center_time BETWEEN %s AND %s AND ST_Intersects(footprint, ST_GeomFromText(%s, 4326))
+    """
+    cursor.execute(q, (dataset_type_ref, start_date, end_date, aoi))
+    rows = cursor.fetchall()
+
+    # End connection
+    cursor.close()
+    connection.close()
+
+    return {
+        'dataset_type_ref': dataset_type_ref,
+        'dataset_count': len(rows),
+        'valid_datasets' : bool(len(rows) > 0)
+    }
 
 
 def login_to_publisher():
