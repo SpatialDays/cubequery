@@ -92,7 +92,7 @@
           ],
           "value": [
             "1990-01-01",
-            "1992-01-01"
+            "1993-12-30"
           ],
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
@@ -126,7 +126,7 @@
           ],
           "value": [
             "1990-01-01",
-            "1995-01-01"
+            "1995-12-30"
           ],
           "type": "date_range",
           "_comment": "Satellite only active between these two dates. If only one date provided, it means the satellite is still active.",
