@@ -22,4 +22,7 @@ RUN mamba install --yes \
     && find /opt/conda/ -type f,l -name '*.js.map' -delete \
     && rm -rf /opt/conda/pkgs
 
+RUN pip install --no-cache-dir \
+    git+https://github.com/SatelliteApplicationsCatapult/datacube-utilities.git#egg=datacube_utilities
+
 CMD ["python", "-m", "cubequery.notebook_validation"]

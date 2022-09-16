@@ -26,6 +26,11 @@ RUN groupadd --gid 999 celery \
     && useradd --uid 999 --gid celery --shell /bin/bash --create-home celery \
     && chmod 777 -R /app/ && chown 999:999 -R /app/
 
+RUN pip install --no-cache-dir \
+    git+https://github.com/SatelliteApplicationsCatapult/datacube-utilities.git#egg=datacube_utilities
+
 USER celery:celery
+
+
 
 CMD ["python", "-m", "celery", "worker", "-E", "-A", "cubequery.api_server.celery_app", "--loglevel", "DEBUG"]
