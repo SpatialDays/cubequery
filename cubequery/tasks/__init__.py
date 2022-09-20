@@ -338,13 +338,21 @@ def validate_standard_spatial_query(aoi, countries):
 
     '''
     Returns area of polygon - About 1/4 of country ... 0.25 
-    * Whole of Fiji = 1.8662849915034905
-    * Suva = 0.017204474747948426
+    * Whole of Fiji = 1.8662849915034905 degrees
+    * Suva = 0.017204474747948426 degrees
     '''
     area = parsed_polygon.area
+
+    '''
+    Validates size of polygon
+    '''
     if area > 0.25:
         errors.append(create_error_message(
             {'id': 'aoi', 'error_message': 'AOI area is too large', '_comment': 'Size of polygon is too large'}))
+
+    if area < 0.0001:
+        errors.append(create_error_message(
+            {'id': 'aoi', 'error_message': 'AOI area is too small', '_comment': 'Size of polygon is too small'}))
 
     '''
     Returns bool for polygon inside Fiji
