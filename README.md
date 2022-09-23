@@ -22,7 +22,7 @@ See [NOTEBOOK_DETAILS.md](NOTEBOOK_DETAILS.md) for more information about the pr
  find out what jobs are available and see what jobs are running.
  1) [Redis](https://redis.io/) - This hosts the task queue. Jobs are submitted from the server and then worked on by the 
  workers.
- 1) The workers - This is a [celery](http://www.celeryproject.org/) worker that executes jobs from the queue.
+ 1) The workers (default 3) - This is a [celery](http://www.celeryproject.org/) worker that executes jobs from the queue.
  
  The server and the workers will be based on the containers built from here. The redis deployment can use a standard
  redis container. The processing code will be pulled from the configured github repo on start up.
