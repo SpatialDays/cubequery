@@ -9,7 +9,7 @@ from cubequery.tasks import Parameter, CubeQueryTask, DType
 class DoAThing(CubeQueryTask):
 
     display_name = "Do A Thing"
-    description = "a test task, not really good for anything."
+    description = "a test task, not really good for anything really."
 
     parameters = [
         Parameter("a", "param a", DType.STRING, "string a"),
