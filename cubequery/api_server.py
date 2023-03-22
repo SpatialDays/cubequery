@@ -213,7 +213,7 @@ def create_task():
 
     param_block = json.dumps(args)
 
-    future = thing.delay_or_fail(payload['publish'], **{"params": param_block})
+    future = thing.delay_or_fail(payload.get('publish', None), **{"params": param_block}, use_cache=False)
 
     return jsonify({'task_id': future.task_id})
 
